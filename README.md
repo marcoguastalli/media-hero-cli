@@ -46,14 +46,18 @@ Requires Node.js ≥ 20 and [pnpm](https://pnpm.io/).
 pnpm install
 
 # primary extractor (recommended)
-pip install gallery-dl
+pipx install gallery-dl        # or: pip install gallery-dl
 
-# fallback browser (used when gallery-dl is missing or fails)
+# headless browser — powers BOTH the Playwright and imginn fallbacks
 npx playwright install firefox
 ```
 
-Either extractor alone is enough: without gallery-dl the tool falls
-back to Playwright and prints a one-time install hint.
+gallery-dl alone covers the common case; if it is missing or hits the
+login wall, the tool falls back to Playwright and then to the imginn
+mirror — but **both fallbacks drive headless Firefox**, so
+`npx playwright install firefox` is required unless you rely solely on
+gallery-dl. Without gallery-dl the tool prints a one-time install hint
+and proceeds with the browser fallbacks.
 
 ## Usage
 
@@ -146,6 +150,23 @@ Exit code is `0` only if every URL ended `completed`, `skipped`, or
 - Instagram only (the extractor registry keeps the door open for other
   sites).
 
+## Troubleshooting
+
+- **`gallery-dl is not installed`** — install it with
+  `pipx install gallery-dl` (isolated) or `pip install gallery-dl`. The
+  run still proceeds via the browser fallbacks; this is just a hint.
+- **`browserType.launch: Executable doesn't exist`** — the Playwright
+  browser was never downloaded. Run `npx playwright install firefox`.
+  Needed for both the Playwright and imginn fallbacks.
+- **Everything ends `requires-login`** — Instagram walls most anonymous
+  requests, and the imginn mirror also failed (or its Cloudflare
+  challenge did not clear). Retry, or pass `--cookies` with a logged-in
+  session.
+- **Images look low-resolution (~720px)** — that is the imginn mirror
+  serving a downscaled variant for some posts. The only way to
+  guarantee full-resolution originals is `--cookies`, which pulls
+  directly from Instagram.
+
 ## Development
 
 ```bash
@@ -158,6 +179,16 @@ pnpm validate        # lint + format check + tests + coverage
 ```
 
 See [CLAUDE.md](CLAUDE.md) for architecture and testing details.
+
+## Responsible use
+
+This is a personal archiving tool. Only download content you have the
+right to save, credit creators, and don't redistribute others' media.
+Downloading is subject to Instagram's Terms of Service and to copyright
+law — you are responsible for how you use it. The imginn.com fallback is
+an independent third-party mirror with no affiliation to this project or
+to Instagram; you rely on it at your own risk. Keep the built-in
+rate-limiting delay in place to avoid hammering either service.
 
 ## License
 
