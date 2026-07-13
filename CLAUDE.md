@@ -8,10 +8,16 @@ with code in this repository.
 A Node.js CLI that batch-downloads Instagram post/reel media from a
 text file of URLs. It is a terminal port of the `media-hero-catch`
 Firefox extension (sibling repo) — same media coverage (posts, carousels
-capped at 10 items, reels), same filename numbering convention, ported
-patterns rather than shared code. Public content only in v1; the
-extractor options object already carries an unused `cookiesFile` field
-as the seam for a future `--cookies` flag.
+capped at 10 items, reels), ported patterns rather than shared code
+(carousel filenames use a zero-padded 3-digit suffix, diverging from
+the extension's un-padded numbering). Anonymous by default; `--cookies
+<file>` (Netscape cookies.txt) passes a logged-in session through to
+both Instagram extractors for full-resolution login-walled posts — the
+file goes to gallery-dl verbatim and is parsed (src/extractors/cookies.js)
+into the Playwright context. Cookie files are credentials: gitignored,
+never logged. Without cookies, an imginn.com mirror extractor is the
+last resort and still retrieves most public posts anonymously (at
+reduced resolution).
 
 ## Commands
 
@@ -40,17 +46,25 @@ src/app.js                  orchestrator: parse → skip/extract/download →
                             manifest → report; returns {exitCode, results}
 src/config.js               central CONFIG + validateDelay (clamps 0–30000)
 src/input/url-parser.js     txt → {url, type, shortcode}; /p/ post, /reel(s)/ reel
-src/extractors/registry.js  ordered chain; requires-login is terminal,
-                            other errors fall through; warns once per
-                            missing tool
+src/extractors/registry.js  ordered chain; requires-login is remembered
+                            (not terminal — imginn may still succeed) and
+                            re-thrown only if all fail; other errors fall
+                            through; warns once per missing tool
 src/extractors/gallery-dl.js    primary: spawns gallery-dl; parses stdout
                                 paths → directDownload (files already on
                                 disk); maps stderr to typed errors
 src/extractors/playwright-extractor.js  fallback: headless Firefox,
                                         runs dom-detect via page.evaluate
+src/extractors/imginn.js        last resort: loads imginn.com/p/<code>/
+                                (Cloudflare-walled mirror) in headless
+                                Firefox; reconstructs cdninstagram URLs
+                                the queue can fetch (~720px, no login)
 src/extractors/dom-detect.js    browser-context detection functions
+                                (detectInstagramMedia, detectImginnMedia)
+src/extractors/cookies.js       Netscape cookies.txt → addCookies() objects
 src/extractors/errors.js        ExtractorError + ERROR_CODES
-src/download/filenames.js       extension guessing, carousel numbering
+src/download/filenames.js       carousel numbering (_001.._NNN, padded);
+                                images always .jpg, video ext from URL
 src/download/queue.js           sequential fetch → stream to file; retry
                                 w/ backoff [2000,4000,8000]; verifyFiles
                                 for directDownload results
@@ -100,8 +114,8 @@ Playwright returns media URLs the queue then fetches.
   dirs with only the chain and fetch faked; it asserts manifest content,
   folder layout, and exit codes.
 - Coverage thresholds are 90% global (branches included). The only
-  intentionally uncovered lines are `defaultLaunch` in
-  playwright-extractor.js (launches a real browser).
+  intentionally uncovered lines are the `defaultLaunch` helpers in
+  playwright-extractor.js and imginn.js (they launch a real browser).
 
 ## Code style
 

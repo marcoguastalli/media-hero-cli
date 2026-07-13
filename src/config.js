@@ -16,6 +16,11 @@ export const CONFIG = {
     maxCarouselItems: 10,
     pageTimeoutMs: 10000,
   },
+  imginn: {
+    baseUrl: 'https://imginn.com',
+    challengeAttempts: 6,
+    challengeDelayMs: 5000,
+  },
   output: {
     defaultDir: './downloads',
     manifestName: 'manifest.json',

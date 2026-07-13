@@ -5,7 +5,7 @@
  * external tools.
  */
 
-import { mkdir, readFile } from 'node:fs/promises';
+import { access, mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { CONFIG, validateDelay } from './config.js';
 import { buildFilenames } from './download/filenames.js';
@@ -23,14 +23,21 @@ const NETWORK_STATUSES = new Set(['completed', 'failed', 'requires-login']);
 
 /**
  * Run the full pipeline.
- * @param {Object} options - { urlsFile, outDir, delayMs?, force?, dryRun? }
+ * @param {Object} options - { urlsFile, outDir, delayMs?, force?, dryRun?, cookiesFile? }
  * @param {Object} deps - { chain, queue, reporter, sleepFn? }
  * @returns {Promise<{exitCode: number, results: Array}>}
  */
 export async function runApp(options, deps) {
   const { urlsFile, outDir, force = false, dryRun = false } = options;
+  const cookiesFile = options.cookiesFile ?? null;
   const { chain, queue, reporter, sleepFn = sleep } = deps;
   const delayMs = validateDelay(options.delayMs ?? CONFIG.batch.defaultDelayMs);
+
+  if (cookiesFile) {
+    await access(cookiesFile).catch(() => {
+      throw new Error(`Cookies file not found: ${cookiesFile}`);
+    });
+  }
 
   const entries = parseUrlsFile(await readFile(urlsFile, 'utf8'));
   const manifest = await new Manifest(outDir).load();
@@ -39,7 +46,16 @@ export async function runApp(options, deps) {
 
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
-    const ctx = { entry, manifest, chain, queue, outDir, force, dryRun };
+    const ctx = {
+      entry,
+      manifest,
+      chain,
+      queue,
+      outDir,
+      force,
+      dryRun,
+      cookiesFile,
+    };
     const result = await processEntry(ctx, reporter);
     results.push(result);
     reporter.progress(
@@ -110,11 +126,16 @@ async function processEntry(ctx, reporter) {
   }
 }
 
-async function extractAndDownload({ entry, chain, queue, outDir }, key) {
+async function extractAndDownload(ctx, key) {
+  const { entry, chain, queue, outDir, cookiesFile } = ctx;
   const destDir = path.join(outDir, key);
   await mkdir(destDir, { recursive: true });
 
-  const result = await chain.extract(entry.url, { destDir, shortcode: key });
+  const result = await chain.extract(entry.url, {
+    destDir,
+    shortcode: key,
+    cookiesFile,
+  });
 
   if (result.directDownload?.length) {
     await verifyFiles(result.directDownload);

@@ -21,13 +21,18 @@ const makeFakeBrowser = ({
   closeError = null,
   loginCheckError = null,
 } = {}) => {
-  const state = { closed: false };
+  const state = { closed: false, cookies: null };
   const page = {
     goto: async () => {
       if (gotoError) {
         throw gotoError;
       }
     },
+    context: () => ({
+      addCookies: async cookies => {
+        state.cookies = cookies;
+      },
+    }),
     url: () => finalUrl,
     waitForSelector: async () => {
       if (!articleAppears) {
@@ -139,6 +144,40 @@ describe('playwright extractor', () => {
     const result = await makeExtractor(fake).extract(POST_URL);
     expect(result.media).toEqual(media);
     expect(fake.state.closed).toBe(true);
+  });
+
+  it('loads cookies from a Netscape file into the browser context', async () => {
+    const media = [
+      { url: 'https://cdn.example.com/a_1080.jpg', type: 'image' },
+    ];
+    const fake = makeFakeBrowser({ media });
+    const readCalls = [];
+    const extractor = createPlaywrightExtractor({
+      launchFn: async () => fake.browser,
+      readFileFn: async (file, encoding) => {
+        readCalls.push({ file, encoding });
+        return '.instagram.com\tTRUE\t/\tTRUE\t1790000000\tsessionid\ts3cret';
+      },
+    });
+
+    const result = await extractor.extract(POST_URL, {
+      cookiesFile: '/tmp/cookies.txt',
+    });
+
+    expect(result.media).toEqual(media);
+    expect(readCalls).toEqual([{ file: '/tmp/cookies.txt', encoding: 'utf8' }]);
+    expect(fake.state.cookies).toEqual([
+      expect.objectContaining({ name: 'sessionid', value: 's3cret' }),
+    ]);
+  });
+
+  it('does not touch the browser context without a cookies file', async () => {
+    const fake = makeFakeBrowser({
+      media: [{ url: 'https://cdn.example.com/a.jpg', type: 'image' }],
+    });
+
+    await makeExtractor(fake).extract(POST_URL);
+    expect(fake.state.cookies).toBeNull();
   });
 
   it('treats a failing login-wall check as no login wall', async () => {

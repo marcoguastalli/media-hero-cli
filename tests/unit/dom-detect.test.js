@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  detectImginnMedia,
   detectInstagramMedia,
   hasLoginForm,
 } from '../../src/extractors/dom-detect.js';
@@ -81,6 +82,66 @@ describe('detectInstagramMedia', () => {
       { url: 'https://cdn.example.com/nosize.jpg', type: 'image' },
       { url: 'https://cdn.example.com/large_1080.jpg', type: 'image' },
     ]);
+  });
+});
+
+describe('detectImginnMedia', () => {
+  // imginn proxy URL shape: <proxy-host>/<file>?<cdn-path>?<cdn-query>,
+  // where the cdn-query carries the original host in _nc_ht.
+  const proxy = (file, host) =>
+    `https://s6.imginn.com/${file}?t51/${file}?stp=x&_nc_ht=${host}&oh=1`;
+  const direct = (file, host) =>
+    `https://${host}/v/t51/${file}?stp=x&_nc_ht=${host}&oh=1`;
+
+  it('reconstructs direct cdninstagram URLs, using data-src for lazy slides', () => {
+    const host = 'scontent-atl3-2.cdninstagram.com';
+    document.body.innerHTML = `
+      <div class="show">
+        <div class="media-wrap"><img src="${proxy('a_n.jpg', host)}" /></div>
+        <div class="media-wrap">
+          <img class="lazy" src="//assets.imginn.com/img/lazy.jpg"
+               data-src="${proxy('b_n.jpg', host)}" />
+        </div>
+      </div>
+      <div class="comments">
+        <div class="media-wrap"><img src="${proxy('avatar_n.jpg', host)}" /></div>
+      </div>`;
+
+    expect(detectImginnMedia(10)).toEqual([
+      { url: direct('a_n.jpg', host), type: 'image' },
+      { url: direct('b_n.jpg', host), type: 'image' },
+      { url: direct('avatar_n.jpg', host), type: 'image' },
+    ]);
+  });
+
+  it('prefers a video inside a media-wrap and caps at maxItems', () => {
+    const host = 'scontent.cdninstagram.com';
+    document.body.innerHTML = `
+      <div class="media-wrap">
+        <video><source src="${proxy('clip_n.mp4', host)}" /></video>
+        <img src="${proxy('poster_n.jpg', host)}" />
+      </div>
+      <div class="media-wrap"><img src="${proxy('c_n.jpg', host)}" /></div>`;
+
+    expect(detectImginnMedia(1)).toEqual([
+      { url: direct('clip_n.mp4', host), type: 'video' },
+    ]);
+  });
+
+  it('passes through already-direct URLs and skips unreconstructable ones', () => {
+    const host = 'scontent.cdninstagram.com';
+    document.body.innerHTML = `
+      <div class="media-wrap"><img src="https://${host}/v/direct.jpg" /></div>
+      <div class="media-wrap"><img src="https://s6.imginn.com/broken.jpg" /></div>`;
+
+    expect(detectImginnMedia(10)).toEqual([
+      { url: `https://${host}/v/direct.jpg`, type: 'image' },
+    ]);
+  });
+
+  it('returns nothing when there are no media-wrap containers', () => {
+    document.body.innerHTML = '<div class="page-post"></div>';
+    expect(detectImginnMedia(10)).toEqual([]);
   });
 });
 

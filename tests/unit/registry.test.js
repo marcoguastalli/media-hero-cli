@@ -30,23 +30,33 @@ describe('createExtractorChain', () => {
     expect(result.extractor).toBe('two');
   });
 
-  it('treats requires-login as terminal without trying the fallback', async () => {
+  it('still tries later extractors after a requires-login', async () => {
     let fallbackCalled = false;
     const chain = createExtractorChain([
       failing('one', ERROR_CODES.REQUIRES_LOGIN),
       {
-        name: 'two',
+        name: 'imginn',
         extract: async () => {
           fallbackCalled = true;
-          return { media: [] };
+          return { media: [{ url: 'https://cdn.example.com/a.jpg' }] };
         },
       },
+    ]);
+
+    const result = await chain.extract('https://url', {});
+    expect(result.extractor).toBe('imginn');
+    expect(fallbackCalled).toBe(true);
+  });
+
+  it('reports requires-login in preference to later errors when all fail', async () => {
+    const chain = createExtractorChain([
+      failing('gallery-dl', ERROR_CODES.REQUIRES_LOGIN),
+      failing('imginn', ERROR_CODES.EXTRACTION_FAILED),
     ]);
 
     await expect(chain.extract('https://url', {})).rejects.toMatchObject({
       code: ERROR_CODES.REQUIRES_LOGIN,
     });
-    expect(fallbackCalled).toBe(false);
   });
 
   it('warns once (per extractor) when its tool is missing', async () => {

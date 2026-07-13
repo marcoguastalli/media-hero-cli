@@ -107,13 +107,13 @@ describe('pipeline', () => {
     ]);
 
     const first = await readFile(
-      path.join(outDir, 'SUCCESS01', 'SUCCESS01_1.jpg'),
+      path.join(outDir, 'SUCCESS01', 'SUCCESS01_001.jpg'),
       'utf8'
     );
     expect(first).toBe('FILE-DATA');
-    expect(existsSync(path.join(outDir, 'SUCCESS01', 'SUCCESS01_2.mp4'))).toBe(
-      true
-    );
+    expect(
+      existsSync(path.join(outDir, 'SUCCESS01', 'SUCCESS01_002.mp4'))
+    ).toBe(true);
 
     const manifest = JSON.parse(
       await readFile(path.join(outDir, 'manifest.json'), 'utf8')
@@ -122,8 +122,8 @@ describe('pipeline', () => {
       status: 'completed',
       extractor: 'playwright',
       files: [
-        path.join('SUCCESS01', 'SUCCESS01_1.jpg'),
-        path.join('SUCCESS01', 'SUCCESS01_2.mp4'),
+        path.join('SUCCESS01', 'SUCCESS01_001.jpg'),
+        path.join('SUCCESS01', 'SUCCESS01_002.mp4'),
       ],
     });
     expect(manifest.entries.LOGIN0001.status).toBe('requires-login');
@@ -258,6 +258,46 @@ describe('pipeline', () => {
       error: 'plain failure',
     });
     expect(deps.lines).toContain('plain failure\n');
+  });
+
+  it('threads the cookies file through to the extractor chain', async () => {
+    const { outDir, urlsFile } = await setup();
+    await writeFile(urlsFile, 'https://www.instagram.com/p/SUCCESS01/\n');
+    const cookiesFile = path.join(path.dirname(urlsFile), 'cookies.txt');
+    await writeFile(cookiesFile, '# Netscape HTTP Cookie File\n');
+    const deps = makeDeps();
+    const seenOptions = [];
+    const inner = deps.chain;
+    deps.chain = {
+      extract(url, options) {
+        seenOptions.push(options);
+        return inner.extract(url, options);
+      },
+    };
+
+    const { exitCode } = await runApp(
+      { urlsFile, outDir, delayMs: 0, cookiesFile },
+      deps
+    );
+
+    expect(exitCode).toBe(0);
+    expect(seenOptions[0]).toMatchObject({
+      cookiesFile,
+      shortcode: 'SUCCESS01',
+    });
+  });
+
+  it('rejects a missing cookies file before processing any URL', async () => {
+    const { outDir, urlsFile } = await setup();
+    const deps = makeDeps();
+
+    await expect(
+      runApp(
+        { urlsFile, outDir, delayMs: 0, cookiesFile: '/nope/cookies.txt' },
+        deps
+      )
+    ).rejects.toThrow('Cookies file not found: /nope/cookies.txt');
+    expect(deps.chain.calls).toEqual([]);
   });
 
   it('fails the whole post when a file download fails', async () => {

@@ -6,7 +6,9 @@
  * Returns media URLs only — the download queue fetches the files.
  */
 
+import { readFile } from 'node:fs/promises';
 import { CONFIG } from '../config.js';
+import { parseNetscapeCookies } from './cookies.js';
 import { detectInstagramMedia, hasLoginForm } from './dom-detect.js';
 import { ERROR_CODES, ExtractorError } from './errors.js';
 
@@ -15,14 +17,20 @@ const defaultLaunch = async () => {
   return firefox.launch({ headless: true });
 };
 
-export function createPlaywrightExtractor({ launchFn = defaultLaunch } = {}) {
+export function createPlaywrightExtractor({
+  launchFn = defaultLaunch,
+  readFileFn = readFile,
+} = {}) {
   return {
     name: 'playwright',
 
-    async extract(url) {
+    async extract(url, { cookiesFile } = {}) {
+      const cookies = cookiesFile
+        ? parseNetscapeCookies(await readFileFn(cookiesFile, 'utf8'))
+        : [];
       const browser = await launchFn();
       try {
-        return await extractFromPage(browser, url);
+        return await extractFromPage(browser, url, cookies);
       } finally {
         await browser.close().catch(() => {});
       }
@@ -30,8 +38,11 @@ export function createPlaywrightExtractor({ launchFn = defaultLaunch } = {}) {
   };
 }
 
-async function extractFromPage(browser, url) {
+async function extractFromPage(browser, url, cookies) {
   const page = await browser.newPage();
+  if (cookies.length > 0) {
+    await page.context().addCookies(cookies);
+  }
   const timeout = CONFIG.instagram.pageTimeoutMs;
 
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout });

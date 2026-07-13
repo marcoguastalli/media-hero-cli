@@ -22,14 +22,17 @@ export function createGalleryDlExtractor({
   return {
     name: 'gallery-dl',
 
-    async extract(url, { destDir }) {
+    async extract(url, { destDir, cookiesFile }) {
       const args = [
         '-D',
         destDir,
         '--range',
         `1-${CONFIG.instagram.maxCarouselItems}`,
-        url,
       ];
+      if (cookiesFile) {
+        args.push('--cookies', cookiesFile);
+      }
+      args.push(url);
       const { code, stdout, stderr, error } = await run(spawnFn, binary, args);
 
       if (error) {

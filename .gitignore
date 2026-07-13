@@ -1,5 +1,8 @@
+.claude
 node_modules/
 coverage/
 downloads/
+cookies.txt
+*.cookies.txt
 *.log
 .DS_Store

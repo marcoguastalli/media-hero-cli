@@ -62,6 +62,60 @@ export function detectInstagramMedia(maxItems) {
 }
 
 /**
+ * Detect post media on an imginn.com mirror page.
+ *
+ * imginn proxies Instagram's CDN behind Cloudflare
+ * (`https://sN.imginn.com/<file>?<cdn-path>?<cdn-query>`), but the
+ * original cdninstagram URL — including its valid signature — can be
+ * reconstructed from the proxy URL, and that one is fetchable without
+ * a browser. Post media (and nothing else: profile pictures, related
+ * posts, and comment avatars live elsewhere) sits inside `.media-wrap`
+ * containers; lazy-loaded slides keep the real URL in `data-src`.
+ * @param {number} maxItems - Carousel cap
+ * @returns {Array<{url: string, type: string}>}
+ */
+export function detectImginnMedia(maxItems) {
+  const results = [];
+  const seen = new Set();
+
+  const toDirectUrl = value => {
+    const rest = value.slice(value.indexOf('?') + 1);
+    const query = rest.slice(rest.indexOf('?') + 1);
+    const host = new URLSearchParams(query).get('_nc_ht');
+    return host && rest !== value ? `https://${host}/v/${rest}` : null;
+  };
+
+  const push = (rawUrl, type) => {
+    if (!rawUrl || results.length >= maxItems) {
+      return;
+    }
+    const url = /\bimginn\.com\//.test(rawUrl) ? toDirectUrl(rawUrl) : rawUrl;
+    if (url && url.startsWith('http') && !seen.has(url)) {
+      seen.add(url);
+      results.push({ url, type });
+    }
+  };
+
+  const sourceOf = el =>
+    el.getAttribute('data-src') ||
+    el.getAttribute('src') ||
+    el.querySelector('source')?.getAttribute('src') ||
+    null;
+
+  for (const wrap of document.querySelectorAll('.media-wrap')) {
+    const video = wrap.querySelector('video');
+    const img = wrap.querySelector('img');
+    if (video) {
+      push(sourceOf(video), 'video');
+    } else if (img) {
+      push(sourceOf(img), 'image');
+    }
+  }
+
+  return results;
+}
+
+/**
  * Detect Instagram's anonymous login wall.
  * @returns {boolean}
  */

@@ -11,6 +11,7 @@ import { runApp } from './app.js';
 import { CONFIG } from './config.js';
 import { DownloadQueue } from './download/queue.js';
 import { createGalleryDlExtractor } from './extractors/gallery-dl.js';
+import { createImginnExtractor } from './extractors/imginn.js';
 import { createPlaywrightExtractor } from './extractors/playwright-extractor.js';
 import { createExtractorChain } from './extractors/registry.js';
 import { Reporter } from './report/reporter.js';
@@ -21,24 +22,28 @@ Download Instagram post/reel media listed in a text file (one URL per
 line; blank lines and lines starting with # are ignored).
 
 Options:
-  --out DIR    Output directory (default: ${CONFIG.output.defaultDir})
-  --delay MS   Delay between URLs in ms (default: ${CONFIG.batch.defaultDelayMs})
-  --force      Re-download URLs already marked completed
-  --dry-run    Only parse and classify; no network access, no writes
-  --verbose    Per-step logging (extractor attempts, retries)
-  --help       Show this help
-  --version    Show version
+  --out DIR       Output directory (default: ${CONFIG.output.defaultDir})
+  --delay MS      Delay between URLs in ms (default: ${CONFIG.batch.defaultDelayMs})
+  --cookies FILE  Netscape cookies.txt with a logged-in Instagram
+                  session (for posts behind the login wall)
+  --force         Re-download URLs already marked completed
+  --dry-run       Only parse and classify; no network access, no writes
+  --verbose       Per-step logging (extractor attempts, retries)
+  --help          Show this help
+  --version       Show version
 
-Public content only: posts behind Instagram's login wall are reported
-with a distinct "requires-login" status. Install gallery-dl for the
-primary extractor (pip install gallery-dl); without it the Playwright
-fallback is used (npx playwright install firefox).`;
+Without --cookies only public content is reachable: posts behind
+Instagram's login wall are reported with a distinct "requires-login"
+status. Install gallery-dl for the primary extractor (pip install
+gallery-dl); without it the Playwright fallback is used
+(npx playwright install firefox).`;
 
 const parseCliArgs = () =>
   parseArgs({
     options: {
       out: { type: 'string', default: CONFIG.output.defaultDir },
       delay: { type: 'string' },
+      cookies: { type: 'string' },
       force: { type: 'boolean', default: false },
       'dry-run': { type: 'boolean', default: false },
       verbose: { type: 'boolean', default: false },
@@ -68,7 +73,11 @@ const main = async () => {
   }
 
   const chain = createExtractorChain(
-    [createGalleryDlExtractor(), createPlaywrightExtractor()],
+    [
+      createGalleryDlExtractor(),
+      createPlaywrightExtractor(),
+      createImginnExtractor(),
+    ],
     { onWarning: message => reporter.warn(message) }
   );
 
@@ -79,6 +88,7 @@ const main = async () => {
       delayMs: values.delay === undefined ? undefined : Number(values.delay),
       force: values.force,
       dryRun: values['dry-run'],
+      cookiesFile: values.cookies,
     },
     { chain, queue: new DownloadQueue(), reporter }
   );

@@ -1,31 +1,37 @@
 /**
  * Filename helpers: extension guessing and carousel numbering.
  *
- * Numbering convention matches the media-hero-catch extension:
- * a single item gets no suffix, carousel items get _1.._N.
+ * Numbering convention: a single item gets no suffix; carousel items
+ * get a zero-padded 3-digit suffix _001.._NNN (diverges from the
+ * media-hero-catch extension's un-padded _1.._N).
  */
 
 import path from 'node:path';
 
-const IMAGE_EXTENSIONS = ['png', 'gif', 'webp', 'svg', 'jpeg', 'jpg'];
 const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'avi'];
+const CAROUSEL_PAD = 3;
 
 /**
- * Guess a file extension from a media URL.
+ * Pick a file extension for a media URL. Images are always stored as
+ * .jpg regardless of the source URL (CDNs serve the same photo as
+ * jpg/webp/heic interchangeably); only video extensions are guessed.
  * @param {string} url - Media URL
  * @param {string} type - 'image' or 'video'
  * @returns {string} Extension without dot
  */
 export function guessExtension(url, type = 'image') {
-  const lower = String(url || '').toLowerCase();
+  if (type !== 'video') {
+    return 'jpg';
+  }
 
-  for (const ext of [...VIDEO_EXTENSIONS, ...IMAGE_EXTENSIONS]) {
+  const lower = String(url || '').toLowerCase();
+  for (const ext of VIDEO_EXTENSIONS) {
     if (lower.includes(`.${ext}`)) {
       return ext;
     }
   }
 
-  return type === 'video' ? 'mp4' : 'jpg';
+  return 'mp4';
 }
 
 /**
@@ -58,8 +64,11 @@ export function buildFilenames(media, shortcode) {
     ];
   }
 
-  return media.map((item, index) => ({
-    ...item,
-    filename: `${shortcode}_${index + 1}.${guessExtension(item.url, item.type)}`,
-  }));
+  return media.map((item, index) => {
+    const suffix = String(index + 1).padStart(CAROUSEL_PAD, '0');
+    return {
+      ...item,
+      filename: `${shortcode}_${suffix}.${guessExtension(item.url, item.type)}`,
+    };
+  });
 }
