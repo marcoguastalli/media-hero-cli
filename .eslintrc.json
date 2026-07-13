@@ -1,0 +1,45 @@
+{
+  "root": true,
+  "env": {
+    "node": true,
+    "es2023": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2023,
+    "sourceType": "module"
+  },
+  "extends": ["eslint:recommended"],
+  "rules": {
+    "complexity": ["error", 10],
+    "max-lines-per-function": [
+      "error",
+      { "max": 50, "skipBlankLines": true, "skipComments": true }
+    ],
+    "prefer-const": "error",
+    "prefer-arrow-callback": "error",
+    "prefer-template": "error",
+    "no-var": "error",
+    "no-console": ["error", { "allow": ["warn", "error"] }],
+    "no-unused-vars": [
+      "error",
+      { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["src/extractors/dom-detect.js"],
+      "env": { "browser": true }
+    },
+    {
+      "files": ["tests/**/*.js"],
+      "env": { "jest": true },
+      "rules": {
+        "max-lines-per-function": "off"
+      }
+    },
+    {
+      "files": ["tests/unit/dom-detect.test.js"],
+      "env": { "browser": true, "jest": true }
+    }
+  ]
+}

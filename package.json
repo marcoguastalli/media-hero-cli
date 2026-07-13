@@ -1,0 +1,67 @@
+{
+  "name": "media-hero-cli",
+  "version": "0.1.0",
+  "description": "Batch-download Instagram post media (images/videos) from a text file of URLs",
+  "main": "src/cli.js",
+  "bin": {
+    "media-hero-cli": "src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPatterns=tests/unit",
+    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPatterns=tests/integration",
+    "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "lint": "eslint src/ tests/",
+    "lint:fix": "eslint src/ tests/ --fix",
+    "format": "prettier --write \"src/**/*.js\" \"tests/**/*.js\" \"*.json\" \"*.md\"",
+    "format:check": "prettier --check \"src/**/*.js\" \"tests/**/*.js\" \"*.json\" \"*.md\"",
+    "validate": "pnpm lint && pnpm format:check && pnpm test:coverage"
+  },
+  "keywords": [
+    "cli",
+    "instagram",
+    "media",
+    "downloader",
+    "batch-download",
+    "carousel"
+  ],
+  "author": "Marco Guastalli",
+  "license": "MIT",
+  "packageManager": "pnpm@11.3.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/cli.js"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 90,
+        "functions": 90,
+        "lines": 90,
+        "statements": 90
+      }
+    },
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
+  },
+  "dependencies": {
+    "playwright": "^1.61.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "eslint-plugin-jest": "^29.15.4",
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1",
+    "prettier": "^3.9.5"
+  }
+}

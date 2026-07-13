@@ -1,0 +1,7 @@
+# sample input file for integration tests
+https://www.instagram.com/p/SUCCESS01/
+
+https://www.instagram.com/reel/LOGIN0001/
+https://www.instagram.com/p/FAILURE01/
+https://www.instagram.com/heroaccount/
+https://www.instagram.com/p/DIRECT001/
