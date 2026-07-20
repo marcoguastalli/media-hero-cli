@@ -25,6 +25,9 @@ export const CONFIG = {
     defaultDir: './downloads',
     manifestName: 'manifest.json',
   },
+  input: {
+    defaultFile: 'urls.txt',
+  },
 };
 
 /**

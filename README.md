@@ -6,7 +6,7 @@ file of URLs — a terminal companion to the
 batch use case with no browser UI involved.
 
 ```bash
-media-hero-cli urls.txt --out ./downloads --delay 3000
+pnpm start urls.txt --out ./downloads --delay 3000
 ```
 
 reads `urls.txt` (one Instagram URL per line), downloads every post's
@@ -61,8 +61,14 @@ and proceeds with the browser fallbacks.
 
 ## Usage
 
+The tool is run through pnpm from the project directory — `pnpm start`
+invokes the CLI (`node src/cli.js`), and everything after it is passed
+straight to the tool:
+
 ```
-media-hero-cli <urls.txt> [options]
+pnpm start [urls.txt] [options]
+
+  (input file defaults to ./urls.txt when omitted)
 
   --out DIR       output directory (default: ./downloads)
   --delay MS      delay between URLs in ms (default: 3000, clamped 0–30000)
@@ -73,7 +79,15 @@ media-hero-cli <urls.txt> [options]
   --help, --version
 ```
 
-Run it locally with `pnpm start urls.txt` or `node src/cli.js urls.txt`.
+For example:
+
+```bash
+pnpm start                                    # reads ./urls.txt
+pnpm start urls.txt --out ./downloads --dry-run
+```
+
+(Equivalent to `node src/cli.js urls.txt --out ./downloads --dry-run` if
+you prefer invoking the entry point directly.)
 
 ### Input file
 
@@ -98,7 +112,7 @@ session as a Netscape-format `cookies.txt` and pass it with
 `--cookies`:
 
 ```bash
-media-hero-cli urls.txt --cookies cookies.txt
+pnpm start urls.txt --cookies cookies.txt
 ```
 
 Ways to produce the file: a "cookies.txt" browser extension, or

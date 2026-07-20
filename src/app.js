@@ -78,7 +78,7 @@ export async function runApp(options, deps) {
 }
 
 async function processEntry(ctx, reporter) {
-  const { entry, manifest, force, dryRun } = ctx;
+  const { entry, manifest, force, dryRun, outDir } = ctx;
   const key = entry.shortcode ?? entry.url;
 
   if (entry.type === URL_TYPES.INVALID) {
@@ -94,7 +94,10 @@ async function processEntry(ctx, reporter) {
     return { key, status: 'invalid-url', files: [], error };
   }
 
-  if (!force && manifest.isCompleted(key)) {
+  // Skip only when the manifest says completed AND the recorded files
+  // are still on disk; a completed entry whose files were deleted/moved
+  // falls through and is re-downloaded.
+  if (!force && (await isAlreadyDownloaded(manifest, key, outDir))) {
     return { key, status: 'skipped', files: [] };
   }
 
@@ -158,6 +161,43 @@ async function extractAndDownload(ctx, key) {
     files: downloads.map(d => path.relative(outDir, d.filePath)),
     extractor: result.extractor,
   };
+}
+
+/**
+ * True when a key is recorded completed in the manifest and all of its
+ * files are still present on disk — the condition for skipping it.
+ * @returns {Promise<boolean>}
+ */
+async function isAlreadyDownloaded(manifest, key, outDir) {
+  if (!manifest.isCompleted(key)) {
+    return false;
+  }
+  const recorded = manifest.getEntry(key)?.files ?? [];
+  return allFilesPresent(recorded, outDir);
+}
+
+/**
+ * True only if every manifest-recorded file for a completed entry is
+ * still on disk. An empty record (nothing to verify) counts as absent,
+ * so such an entry is re-downloaded rather than blindly skipped.
+ * @param {string[]} relFiles - Paths relative to outDir
+ * @param {string} outDir
+ * @returns {Promise<boolean>}
+ */
+async function allFilesPresent(relFiles, outDir) {
+  if (relFiles.length === 0) {
+    return false;
+  }
+  for (const rel of relFiles) {
+    const present = await access(path.join(outDir, rel)).then(
+      () => true,
+      () => false
+    );
+    if (!present) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function describeResult(result) {

@@ -23,6 +23,9 @@ reduced resolution).
 
 ```bash
 pnpm install         # pnpm only (nvm-installed, never Homebrew)
+pnpm start [urls.txt] [options]   # run the CLI (= node src/cli.js …);
+                                  # args pass through; input file
+                                  # defaults to ./urls.txt when omitted
 pnpm test            # full Jest suite (native ESM)
 pnpm test:unit       # tests/unit only
 pnpm test:integration

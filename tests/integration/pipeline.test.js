@@ -5,7 +5,7 @@
  */
 
 import { existsSync } from 'node:fs';
-import { copyFile, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { copyFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -182,6 +182,33 @@ describe('pipeline', () => {
 
     expect(results.filter(r => r.status === 'skipped')).toHaveLength(0);
     expect(deps.chain.calls).toHaveLength(4);
+  });
+
+  it('re-downloads a completed URL whose files were deleted on disk', async () => {
+    const { outDir, urlsFile } = await setup();
+    await runApp({ urlsFile, outDir, delayMs: 0 }, makeDeps());
+
+    // Simulate the user deleting a downloaded post's folder while its
+    // manifest entry still says "completed".
+    await rm(path.join(outDir, 'SUCCESS01'), { recursive: true });
+
+    const deps = makeDeps();
+    const { results } = await runApp({ urlsFile, outDir, delayMs: 0 }, deps);
+
+    const byKey = Object.fromEntries(results.map(r => [r.key, r.status]));
+    // SUCCESS01 files are gone → re-downloaded, not skipped.
+    expect(byKey.SUCCESS01).toBe('completed');
+    expect(deps.chain.calls).toContain(
+      'https://www.instagram.com/p/SUCCESS01/'
+    );
+    // DIRECT001 still on disk → still skipped.
+    expect(byKey.DIRECT001).toBe('skipped');
+    expect(deps.chain.calls).not.toContain(
+      'https://www.instagram.com/p/DIRECT001/'
+    );
+    expect(
+      existsSync(path.join(outDir, 'SUCCESS01', 'SUCCESS01_001.jpg'))
+    ).toBe(true);
   });
 
   it('dry-run touches neither network nor disk', async () => {

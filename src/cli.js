@@ -16,10 +16,11 @@ import { createPlaywrightExtractor } from './extractors/playwright-extractor.js'
 import { createExtractorChain } from './extractors/registry.js';
 import { Reporter } from './report/reporter.js';
 
-const HELP = `Usage: media-hero-cli <urls.txt> [options]
+const HELP = `Usage: media-hero-cli [urls.txt] [options]
 
 Download Instagram post/reel media listed in a text file (one URL per
-line; blank lines and lines starting with # are ignored).
+line; blank lines and lines starting with # are ignored). The input file
+defaults to ${CONFIG.input.defaultFile} when omitted.
 
 Options:
   --out DIR       Output directory (default: ${CONFIG.output.defaultDir})
@@ -66,11 +67,12 @@ const main = async () => {
     reporter.info(require('../package.json').version);
     return 0;
   }
-  if (positionals.length !== 1) {
-    console.error('Expected exactly one input file.\n');
+  if (positionals.length > 1) {
+    console.error('Expected at most one input file.\n');
     console.error(HELP);
     return 1;
   }
+  const urlsFile = positionals[0] ?? CONFIG.input.defaultFile;
 
   const chain = createExtractorChain(
     [
@@ -83,7 +85,7 @@ const main = async () => {
 
   const { exitCode } = await runApp(
     {
-      urlsFile: positionals[0],
+      urlsFile,
       outDir: values.out,
       delayMs: values.delay === undefined ? undefined : Number(values.delay),
       force: values.force,
