@@ -1,6 +1,6 @@
 {
   "name": "media-hero-cli",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Batch-download Instagram post media (images/videos) from a text file of URLs",
   "main": "src/cli.js",
   "bin": {
