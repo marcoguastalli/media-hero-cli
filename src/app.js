@@ -5,7 +5,7 @@
  * external tools.
  */
 
-import { access, mkdir, readFile } from 'node:fs/promises';
+import { access, appendFile, mkdir, readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { CONFIG, validateDelay } from './config.js';
 import { buildFilenames } from './download/filenames.js';
@@ -20,6 +20,10 @@ const OK_STATUSES = new Set(['completed', 'skipped', 'dry-run']);
 
 /** Statuses after which the inter-URL rate-limiting delay applies. */
 const NETWORK_STATUSES = new Set(['completed', 'failed', 'requires-login']);
+
+/** Unsuccessful statuses whose empty destination folder is cleaned up
+ * and whose URL is recorded in urls_fails.txt for a later retry. */
+const FAIL_TRACKED_STATUSES = new Set(['failed', 'requires-login']);
 
 /**
  * Run the full pipeline.
@@ -41,6 +45,7 @@ export async function runApp(options, deps) {
 
   const entries = parseUrlsFile(await readFile(urlsFile, 'utf8'));
   const manifest = await new Manifest(outDir).load();
+  const failTracker = await createFailTracker(urlsFile);
   const startedAt = Date.now();
   const results = [];
 
@@ -57,6 +62,9 @@ export async function runApp(options, deps) {
       cookiesFile,
     };
     const result = await processEntry(ctx, reporter);
+    if (FAIL_TRACKED_STATUSES.has(result.status)) {
+      await failTracker.record(outDir, result.key, entry.url);
+    }
     results.push(result);
     reporter.progress(
       i + 1,
@@ -198,6 +206,34 @@ async function allFilesPresent(relFiles, outDir) {
     }
   }
   return true;
+}
+
+/**
+ * Tracks unsuccessful downloads (failed or requires-login): on each one
+ * it removes the (possibly partial or empty) destination folder and
+ * appends the URL to urls_fails.txt (next to urlsFile), deduping
+ * against entries already recorded there.
+ * @returns {Promise<{record(outDir: string, key: string, url: string): Promise<void>}>}
+ */
+async function createFailTracker(urlsFile) {
+  const failsFile = path.join(path.dirname(urlsFile), 'urls_fails.txt');
+  const content = await readFile(failsFile, 'utf8').catch(() => '');
+  const knownFails = new Set(
+    content
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean)
+  );
+
+  return {
+    async record(outDir, key, url) {
+      await rm(path.join(outDir, key), { recursive: true, force: true });
+      if (!knownFails.has(url)) {
+        knownFails.add(url);
+        await appendFile(failsFile, `${url}\n`);
+      }
+    },
+  };
 }
 
 function describeResult(result) {

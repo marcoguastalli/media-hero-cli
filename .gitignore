@@ -6,4 +6,4 @@ cookies.txt
 *.cookies.txt
 *.log
 .DS_Store
-urls.txt
+urls*.txt
