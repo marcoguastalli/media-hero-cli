@@ -341,4 +341,48 @@ describe('pipeline', () => {
     expect(success.status).toBe('failed');
     expect(success.error).toContain('HTTP 500');
   });
+
+  it('removes the destination folder and records the URL on failure or requires-login', async () => {
+    const { outDir, urlsFile } = await setup();
+    const failsFile = path.join(path.dirname(urlsFile), 'urls_fails.txt');
+    const deps = makeDeps();
+
+    await runApp({ urlsFile, outDir, delayMs: 0 }, deps);
+
+    expect(existsSync(path.join(outDir, 'FAILURE01'))).toBe(false);
+    expect(existsSync(path.join(outDir, 'LOGIN0001'))).toBe(false);
+    const failsContent = await readFile(failsFile, 'utf8');
+    expect(failsContent).toBe(
+      `${[
+        'https://www.instagram.com/reel/LOGIN0001/',
+        'https://www.instagram.com/p/FAILURE01/',
+      ].join('\n')}\n`
+    );
+
+    // Re-running the same failures repeatedly (as separate launches,
+    // each with its own fresh failTracker reading the file from disk)
+    // never duplicates the entries.
+    for (let i = 0; i < 3; i++) {
+      await runApp({ urlsFile, outDir, delayMs: 0 }, makeDeps());
+    }
+    const failsContentAfterReruns = await readFile(failsFile, 'utf8');
+    expect(failsContentAfterReruns).toBe(failsContent);
+  });
+
+  it('dedupes a failing URL that appears twice within the same run', async () => {
+    const { outDir, urlsFile } = await setup();
+    await writeFile(
+      urlsFile,
+      `${[
+        'https://www.instagram.com/p/FAILURE01/',
+        'https://www.instagram.com/p/FAILURE01/',
+      ].join('\n')}\n`
+    );
+    const failsFile = path.join(path.dirname(urlsFile), 'urls_fails.txt');
+
+    await runApp({ urlsFile, outDir, delayMs: 0 }, makeDeps());
+
+    const failsContent = await readFile(failsFile, 'utf8');
+    expect(failsContent).toBe('https://www.instagram.com/p/FAILURE01/\n');
+  });
 });
