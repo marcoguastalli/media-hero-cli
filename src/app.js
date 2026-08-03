@@ -5,7 +5,14 @@
  * external tools.
  */
 
-import { access, appendFile, mkdir, readFile, rm } from 'node:fs/promises';
+import {
+  access,
+  appendFile,
+  mkdir,
+  readdir,
+  readFile,
+  rm,
+} from 'node:fs/promises';
 import path from 'node:path';
 import { CONFIG, validateDelay } from './config.js';
 import { buildFilenames } from './download/filenames.js';
@@ -90,7 +97,7 @@ async function processEntry(ctx, reporter) {
   const key = entry.shortcode ?? entry.url;
 
   if (entry.type === URL_TYPES.INVALID) {
-    const error = 'Not a recognized Instagram post/reel URL';
+    const error = 'Not a recognized post/reel URL';
     if (!dryRun) {
       await manifest.record(key, {
         url: entry.url,
@@ -102,10 +109,7 @@ async function processEntry(ctx, reporter) {
     return { key, status: 'invalid-url', files: [], error };
   }
 
-  // Skip only when the manifest says completed AND the recorded files
-  // are still on disk; a completed entry whose files were deleted/moved
-  // falls through and is re-downloaded.
-  if (!force && (await isAlreadyDownloaded(manifest, key, outDir))) {
+  if (!force && (await shouldSkipExisting(manifest, key, outDir))) {
     return { key, status: 'skipped', files: [] };
   }
 
@@ -172,11 +176,28 @@ async function extractAndDownload(ctx, key) {
 }
 
 /**
+ * True when a key should be skipped rather than (re-)extracted: either
+ * the manifest says completed with the recorded files still on disk, or
+ * the destination folder already has files the manifest never recorded
+ * (e.g. left behind by a prior crashed/interrupted run, or an extractor
+ * that partially wrote output before falling through to a fallback) —
+ * re-extracting into it would otherwise duplicate what's already there.
+ * @returns {Promise<boolean>}
+ */
+async function shouldSkipExisting(manifest, key, outDir) {
+  if (await isAlreadyDownloaded(manifest, key, outDir)) {
+    return true;
+  }
+  const entries = await readdir(path.join(outDir, key)).catch(() => []);
+  return entries.length > 0;
+}
+
+/**
  * True when a key is recorded completed in the manifest and all of its
  * files are still present on disk — the condition for skipping it.
  * @returns {Promise<boolean>}
  */
-async function isAlreadyDownloaded(manifest, key, outDir) {
+export async function isAlreadyDownloaded(manifest, key, outDir) {
   if (!manifest.isCompleted(key)) {
     return false;
   }

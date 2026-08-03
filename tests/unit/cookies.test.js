@@ -4,11 +4,11 @@ const FILE = [
   '# Netscape HTTP Cookie File',
   '# https://curl.se/docs/http-cookies.html',
   '',
-  '.instagram.com\tTRUE\t/\tTRUE\t1790000000\tcsrftoken\tabc123',
-  '#HttpOnly_.instagram.com\tTRUE\t/\tTRUE\t1790000000\tsessionid\ts3cret',
-  '.instagram.com\tTRUE\t/\tFALSE\t0\tig_lang\ten',
+  '.source-of-media.com\tTRUE\t/\tTRUE\t1790000000\tcsrftoken\tabc123',
+  '#HttpOnly_.source-of-media.com\tTRUE\t/\tTRUE\t1790000000\tsessionid\ts3cret',
+  '.source-of-media.com\tTRUE\t/\tFALSE\t0\tig_lang\ten',
   'not a cookie line',
-  '.instagram.com\tTRUE\t/\tTRUE\t1790000000\ttoo\tmany\tfields',
+  '.source-of-media.com\tTRUE\t/\tTRUE\t1790000000\ttoo\tmany\tfields',
 ].join('\n');
 
 describe('parseNetscapeCookies', () => {
@@ -18,7 +18,7 @@ describe('parseNetscapeCookies', () => {
     expect(cookies[0]).toEqual({
       name: 'csrftoken',
       value: 'abc123',
-      domain: '.instagram.com',
+      domain: '.source-of-media.com',
       path: '/',
       expires: 1790000000,
       secure: true,
@@ -32,7 +32,7 @@ describe('parseNetscapeCookies', () => {
 
     expect(session).toMatchObject({
       value: 's3cret',
-      domain: '.instagram.com',
+      domain: '.source-of-media.com',
       httpOnly: true,
     });
   });

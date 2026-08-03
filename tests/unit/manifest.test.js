@@ -20,7 +20,7 @@ describe('Manifest', () => {
     const manifest = await new Manifest(outDir).load();
 
     await manifest.record('ABC123', {
-      url: 'https://www.instagram.com/p/ABC123/',
+      url: 'https://www.source-of-media.com/p/ABC123/',
       status: 'completed',
       files: ['ABC123/ABC123.jpg'],
       extractor: 'gallery-dl',
@@ -40,7 +40,7 @@ describe('Manifest', () => {
     const outDir = await makeTempDir();
     const manifest = await new Manifest(outDir).load();
     await manifest.record('BAD', {
-      url: 'https://www.instagram.com/p/BAD/',
+      url: 'https://www.source-of-media.com/p/BAD/',
       status: 'failed',
       files: [],
       error: 'boom',

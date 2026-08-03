@@ -4,18 +4,17 @@
  * (no imports, no closure references) because Playwright serializes
  * it into the page.
  *
- * The heuristics mirror the media-hero-catch extension's Instagram
- * detector: prefer <video> sources, pick the highest-resolution srcset
- * candidate for images, and filter out profile pictures and tiny UI
- * elements.
+ * The heuristics mirror the media-hero-catch extension's detector:
+ * prefer <video> sources, pick the highest-resolution srcset candidate
+ * for images, and filter out profile pictures and tiny UI elements.
  */
 
 /**
- * Detect post media on an Instagram page.
+ * Detect post media on a source-of-media page.
  * @param {number} maxItems - Carousel cap
  * @returns {Array<{url: string, type: string}>}
  */
-export function detectInstagramMedia(maxItems) {
+export function detectSourceMedia(maxItems) {
   const results = [];
   const seen = new Set();
   const scope = document.querySelector('article') || document.body;
@@ -64,9 +63,9 @@ export function detectInstagramMedia(maxItems) {
 /**
  * Detect post media on an imginn.com mirror page.
  *
- * imginn proxies Instagram's CDN behind Cloudflare
+ * imginn proxies the source site's CDN behind Cloudflare
  * (`https://sN.imginn.com/<file>?<cdn-path>?<cdn-query>`), but the
- * original cdninstagram URL — including its valid signature — can be
+ * original CDN URL — including its valid signature — can be
  * reconstructed from the proxy URL, and that one is fetchable without
  * a browser. Post media (and nothing else: profile pictures, related
  * posts, and comment avatars live elsewhere) sits inside `.media-wrap`
@@ -116,7 +115,7 @@ export function detectImginnMedia(maxItems) {
 }
 
 /**
- * Detect Instagram's anonymous login wall.
+ * Detect the source site's anonymous login wall.
  * @returns {boolean}
  */
 export function hasLoginForm() {

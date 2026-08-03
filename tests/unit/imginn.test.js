@@ -3,7 +3,7 @@ import { ERROR_CODES } from '../../src/extractors/errors.js';
 import { createImginnExtractor } from '../../src/extractors/imginn.js';
 
 const SHORTCODE = 'ABC123';
-const SOURCE_URL = 'https://www.instagram.com/p/ABC123/';
+const SOURCE_URL = 'https://www.source-of-media.com/p/ABC123/';
 
 /**
  * Fake browser whose page reports a scripted title sequence (to model

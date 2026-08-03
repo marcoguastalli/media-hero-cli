@@ -12,7 +12,7 @@ export const CONFIG = {
     retryDelays: [2000, 4000, 8000],
     fileTimeoutMs: 60000,
   },
-  instagram: {
+  source: {
     maxCarouselItems: 10,
     pageTimeoutMs: 10000,
   },

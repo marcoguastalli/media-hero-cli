@@ -1,13 +1,14 @@
 {
   "name": "media-hero-cli",
   "version": "0.4.0",
-  "description": "Batch-download Instagram post media (images/videos) from a text file of URLs",
+  "description": "Batch-download post media (images/videos) from a text file of URLs",
   "main": "src/cli.js",
   "bin": {
     "media-hero-cli": "src/cli.js"
   },
   "scripts": {
     "start": "node src/cli.js",
+    "collection": "node src/collection-cli.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPatterns=tests/unit",
     "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPatterns=tests/integration",
@@ -21,7 +22,6 @@
   },
   "keywords": [
     "cli",
-    "instagram",
     "media",
     "downloader",
     "batch-download",
@@ -40,7 +40,8 @@
     "coverageDirectory": "coverage",
     "collectCoverageFrom": [
       "src/**/*.js",
-      "!src/cli.js"
+      "!src/cli.js",
+      "!src/collection-cli.js"
     ],
     "coverageThreshold": {
       "global": {

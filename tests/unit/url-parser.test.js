@@ -6,9 +6,11 @@ import {
 
 describe('classifyUrl', () => {
   it('classifies a post URL and extracts the shortcode', () => {
-    const result = classifyUrl('https://www.instagram.com/p/C7xKp2AbCdE/');
+    const result = classifyUrl(
+      'https://www.source-of-media.com/p/C7xKp2AbCdE/'
+    );
     expect(result).toEqual({
-      url: 'https://www.instagram.com/p/C7xKp2AbCdE/',
+      url: 'https://www.source-of-media.com/p/C7xKp2AbCdE/',
       type: URL_TYPES.POST,
       shortcode: 'C7xKp2AbCdE',
     });
@@ -16,44 +18,45 @@ describe('classifyUrl', () => {
 
   it('classifies a post URL with a username prefix', () => {
     const result = classifyUrl(
-      'https://www.instagram.com/heroaccount/p/AB-12_cd/'
+      'https://www.source-of-media.com/heroaccount/p/AB-12_cd/'
     );
     expect(result.type).toBe(URL_TYPES.POST);
     expect(result.shortcode).toBe('AB-12_cd');
   });
 
   it('classifies /reel/ and /reels/ URLs', () => {
-    expect(classifyUrl('https://www.instagram.com/reel/XYZ789/').type).toBe(
-      URL_TYPES.REEL
-    );
-    const reels = classifyUrl('https://instagram.com/reels/XYZ789/');
+    expect(
+      classifyUrl('https://www.source-of-media.com/reel/XYZ789/').type
+    ).toBe(URL_TYPES.REEL);
+    const reels = classifyUrl('https://source-of-media.com/reels/XYZ789/');
     expect(reels.type).toBe(URL_TYPES.REEL);
     expect(reels.shortcode).toBe('XYZ789');
   });
 
-  it('rejects profile and non-post Instagram URLs', () => {
-    expect(classifyUrl('https://www.instagram.com/heroaccount/').type).toBe(
-      URL_TYPES.INVALID
-    );
+  it('rejects profile and non-post URLs', () => {
     expect(
-      classifyUrl('https://www.instagram.com/stories/heroaccount/123/').type
+      classifyUrl('https://www.source-of-media.com/heroaccount/').type
+    ).toBe(URL_TYPES.INVALID);
+    expect(
+      classifyUrl('https://www.source-of-media.com/stories/heroaccount/123/')
+        .type
     ).toBe(URL_TYPES.INVALID);
   });
 
-  it('rejects non-Instagram hosts, including lookalikes', () => {
+  it('accepts any host, as long as the path shape matches', () => {
     expect(classifyUrl('https://example.com/p/ABC/').type).toBe(
-      URL_TYPES.INVALID
+      URL_TYPES.POST
     );
-    expect(classifyUrl('https://notinstagram.com/p/ABC/').type).toBe(
-      URL_TYPES.INVALID
+    expect(classifyUrl('https://some-other-site.net/reel/ABC/').type).toBe(
+      URL_TYPES.REEL
     );
   });
 
   it('rejects malformed URLs and non-http protocols', () => {
     expect(classifyUrl('not a url').type).toBe(URL_TYPES.INVALID);
-    expect(classifyUrl('ftp://instagram.com/p/ABC/').type).toBe(
-      URL_TYPES.INVALID
-    );
+    expect(
+      classifyUrl('ftp://www.source-of-media.com/p/ABC/').type
+    ).toBe(URL_TYPES.INVALID);
   });
 });
 
@@ -62,10 +65,10 @@ describe('parseUrlsFile', () => {
     const content = [
       '# my list',
       '',
-      '  https://www.instagram.com/p/AAA111/  ',
-      'https://www.instagram.com/heroaccount/',
+      '  https://www.source-of-media.com/p/AAA111/  ',
+      'https://www.source-of-media.com/heroaccount/',
       '\t',
-      'https://www.instagram.com/reel/BBB222/',
+      'https://www.source-of-media.com/reel/BBB222/',
     ].join('\n');
 
     const entries = parseUrlsFile(content);
@@ -77,7 +80,7 @@ describe('parseUrlsFile', () => {
 
   it('handles CRLF line endings', () => {
     const entries = parseUrlsFile(
-      'https://www.instagram.com/p/AAA111/\r\nhttps://www.instagram.com/p/BBB222/\r\n'
+      'https://www.source-of-media.com/p/AAA111/\r\nhttps://www.source-of-media.com/p/BBB222/\r\n'
     );
     expect(entries.map(e => e.shortcode)).toEqual(['AAA111', 'BBB222']);
   });
