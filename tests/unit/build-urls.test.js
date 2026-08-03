@@ -21,8 +21,8 @@ describe('buildCollectionUrls', () => {
     });
 
     expect(result.newUrls).toEqual([
-      'https://www.source-of-media.com/p/AAA111/',
-      'https://www.source-of-media.com/p/BBB222/',
+      'https://www.instagram.com/p/AAA111/',
+      'https://www.instagram.com/p/BBB222/',
     ]);
     expect(result.stats).toEqual({
       found: 2,
@@ -51,7 +51,7 @@ describe('buildCollectionUrls', () => {
       outDir,
     });
 
-    expect(result.newUrls).toEqual(['https://www.source-of-media.com/p/BBB222/']);
+    expect(result.newUrls).toEqual(['https://www.instagram.com/p/BBB222/']);
     expect(result.stats).toMatchObject({
       found: 2,
       downloaded: 1,
@@ -77,7 +77,7 @@ describe('buildCollectionUrls', () => {
       outDir,
     });
 
-    expect(result.newUrls).toEqual(['https://www.source-of-media.com/p/AAA111/']);
+    expect(result.newUrls).toEqual(['https://www.instagram.com/p/AAA111/']);
     expect(result.stats.downloaded).toBe(0);
   });
 
@@ -92,7 +92,7 @@ describe('buildCollectionUrls', () => {
       outDir,
     });
 
-    expect(result.newUrls).toEqual(['https://www.source-of-media.com/p/BBB222/']);
+    expect(result.newUrls).toEqual(['https://www.instagram.com/p/BBB222/']);
     expect(result.stats).toEqual({
       found: 2,
       downloaded: 0,

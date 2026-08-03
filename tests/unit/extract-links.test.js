@@ -13,12 +13,12 @@ describe('extractPostLinks', () => {
       {
         shortcode: 'AAA111',
         type: 'post',
-        url: 'https://www.source-of-media.com/p/AAA111/',
+        url: 'https://www.instagram.com/p/AAA111/',
       },
       {
         shortcode: 'BBB222',
         type: 'post',
-        url: 'https://www.source-of-media.com/p/BBB222/',
+        url: 'https://www.instagram.com/p/BBB222/',
       },
     ]);
   });
@@ -34,12 +34,12 @@ describe('extractPostLinks', () => {
       {
         shortcode: 'CCC333',
         type: 'reel',
-        url: 'https://www.source-of-media.com/reel/CCC333/',
+        url: 'https://www.instagram.com/reel/CCC333/',
       },
       {
         shortcode: 'DDD444',
         type: 'reel',
-        url: 'https://www.source-of-media.com/reel/DDD444/',
+        url: 'https://www.instagram.com/reel/DDD444/',
       },
     ]);
   });
@@ -73,22 +73,22 @@ describe('extractPostLinks', () => {
 
   it('extracts links from a plain URL list (harvest script clipboard output)', () => {
     const text = [
-      'https://www.source-of-media.com/reels/',
-      'https://www.source-of-media.com/p/DbJO2-4oICF/',
-      'https://www.source-of-media.com/reel/DaKc7EHDJzs/',
-      'https://www.source-of-media.com/p/DbJO2-4oICF/',
+      'https://www.instagram.com/reels/',
+      'https://www.instagram.com/p/DbJO2-4oICF/',
+      'https://www.instagram.com/reel/DaKc7EHDJzs/',
+      'https://www.instagram.com/p/DbJO2-4oICF/',
     ].join('\n');
 
     expect(extractPostLinks(text)).toEqual([
       {
         shortcode: 'DbJO2-4oICF',
         type: 'post',
-        url: 'https://www.source-of-media.com/p/DbJO2-4oICF/',
+        url: 'https://www.instagram.com/p/DbJO2-4oICF/',
       },
       {
         shortcode: 'DaKc7EHDJzs',
         type: 'reel',
-        url: 'https://www.source-of-media.com/reel/DaKc7EHDJzs/',
+        url: 'https://www.instagram.com/reel/DaKc7EHDJzs/',
       },
     ]);
   });

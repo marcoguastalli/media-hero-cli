@@ -9,7 +9,7 @@
  */
 
 const LINK_PATTERN =
-  /(?:href="\/|instagram\.com\/)(p|reels?)\/([A-Za-z0-9_-]+)\/?/g;
+  /(?:href="\/|https?:\/\/[^/"]+\/)(p|reels?)\/([A-Za-z0-9_-]+)\/?/g;
 
 /**
  * @param {string} html - Raw HTML of a saved-collection page, or a

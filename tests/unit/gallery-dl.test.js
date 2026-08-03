@@ -193,9 +193,7 @@ describe('gallery-dl extractor', () => {
       destDir: '/tmp/out/DbBFKFnkTTE',
     });
 
-    expect(result.directDownload).toEqual([
-      'DbBFKFnkTTE/DbBFKFnkTTE_001.jpg',
-    ]);
+    expect(result.directDownload).toEqual(['DbBFKFnkTTE/DbBFKFnkTTE_001.jpg']);
   });
 
   it('fails when gallery-dl exits cleanly but reports no files', async () => {

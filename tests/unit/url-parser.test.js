@@ -44,9 +44,7 @@ describe('classifyUrl', () => {
   });
 
   it('accepts any host, as long as the path shape matches', () => {
-    expect(classifyUrl('https://example.com/p/ABC/').type).toBe(
-      URL_TYPES.POST
-    );
+    expect(classifyUrl('https://example.com/p/ABC/').type).toBe(URL_TYPES.POST);
     expect(classifyUrl('https://some-other-site.net/reel/ABC/').type).toBe(
       URL_TYPES.REEL
     );
@@ -54,9 +52,9 @@ describe('classifyUrl', () => {
 
   it('rejects malformed URLs and non-http protocols', () => {
     expect(classifyUrl('not a url').type).toBe(URL_TYPES.INVALID);
-    expect(
-      classifyUrl('ftp://www.source-of-media.com/p/ABC/').type
-    ).toBe(URL_TYPES.INVALID);
+    expect(classifyUrl('ftp://www.source-of-media.com/p/ABC/').type).toBe(
+      URL_TYPES.INVALID
+    );
   });
 });
 
