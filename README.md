@@ -1,6 +1,6 @@
 # media-hero-cli
 
-Batch-download Instagram post media (images/videos) from a plain-text
+Batch-download post media (images/videos) from a plain-text
 file of URLs — a terminal companion to the
 [media-hero-catch](../media-hero-catch) Firefox extension, covering the
 batch use case with no browser UI involved.
@@ -9,7 +9,7 @@ batch use case with no browser UI involved.
 pnpm start urls.txt --out ./downloads --delay 3000
 ```
 
-reads `urls.txt` (one Instagram URL per line), downloads every post's
+reads `urls.txt` (one URL per line), downloads every post's
 media into per-post subfolders, skips URLs already downloaded on
 previous runs, and prints a summary.
 
@@ -20,8 +20,8 @@ previous runs, and prints a summary.
 - **Three-stage extraction**, tried in order until one succeeds:
   1. [gallery-dl](https://github.com/mikf/gallery-dl) — primary.
   2. Playwright headless Firefox applying the extension's DOM
-     heuristics on instagram.com directly.
-  3. [imginn.com](https://imginn.com) — a public Instagram mirror keyed
+     heuristics on the source site directly.
+  3. [imginn.com](https://imginn.com) — a public mirror keyed
      by the same shortcode, used as a last resort when the first two hit
      the login wall. It serves login-walled public posts anonymously
      (at reduced, ~720px resolution).
@@ -32,8 +32,8 @@ previous runs, and prints a summary.
 - **Rate limiting**: sequential processing with a configurable delay
   between URLs.
 - **Optional cookies**: `--cookies <file>` (Netscape `cookies.txt`
-  format) unlocks posts behind Instagram's login wall using an existing
-  browser session, and gets full-resolution originals from Instagram
+  format) unlocks posts behind the source site's login wall using an
+  existing browser session, and gets full-resolution originals
   directly. Without it, the imginn fallback still retrieves most public
   posts anonymously; only genuinely private posts end up as
   `requires-login`.
@@ -95,18 +95,18 @@ One URL per line; blank lines and lines starting with `#` are ignored.
 
 ```
 # my saved posts
-https://www.instagram.com/p/C7xKp2AbCdE/
-https://www.instagram.com/reel/D8yLq3BcDeF/
+https://www.source-of-media.com/p/C7xKp2AbCdE/
+https://www.source-of-media.com/reel/D8yLq3BcDeF/
 ```
 
 Recognized paths: `/p/<shortcode>/` (post) and `/reel/<shortcode>/` or
 `/reels/<shortcode>/` (reel). Anything else — profiles, stories,
-non-Instagram hosts — is rejected per-line with status `invalid-url`;
+unsupported hosts — is rejected per-line with status `invalid-url`;
 the run continues with the remaining URLs.
 
 ### Cookies (login-walled posts)
 
-Instagram serves a login wall to anonymous clients for most content —
+The source site serves a login wall to anonymous clients for most content —
 even public posts. To download those, export your logged-in browser
 session as a Netscape-format `cookies.txt` and pass it with
 `--cookies`:
@@ -117,12 +117,12 @@ pnpm start urls.txt --cookies cookies.txt
 
 Ways to produce the file: a "cookies.txt" browser extension, or
 `yt-dlp --cookies-from-browser firefox --cookies cookies.txt` style
-exporters. Only the `sessionid`/`csrftoken` Instagram cookies matter.
+exporters. Only the `sessionid`/`csrftoken` cookies matter.
 The file is passed to gallery-dl as-is (`--cookies`) and parsed into
 the Playwright browser context for the fallback.
 
 **Treat the file as a credential** — anyone holding it has your
-Instagram session. Keep it out of git and delete it when done.
+logged-in session. Keep it out of git and delete it when done.
 
 ### Output layout
 
@@ -153,6 +153,56 @@ Done in 41.3s: 9 completed, 1 skipped, 1 requires-login, 1 invalid-url — 14 fi
 Exit code is `0` only if every URL ended `completed`, `skipped`, or
 `dry-run`; `1` otherwise.
 
+## Importing a Saved collection
+
+Builds `urls.txt` from a saved-posts collection without ever
+handing this tool (or an AI assistant) your login or session cookies —
+everything runs in your own logged-in browser tab.
+
+**1. Harvest the links.** Open the Saved collection page
+(`www.source-of-media.com/<you>/saved/all-posts/` or a named collection), open
+DevTools Console (F12), and paste in the contents of
+[`scripts/harvest-saved-links.js`](scripts/harvest-saved-links.js).
+
+The saved grid virtualizes — items that scroll out of view can
+be unmounted from the DOM, so a single "scroll to bottom, copy page
+source" pass silently loses earlier items. The script scrolls
+incrementally and harvests links after every step, before they get
+unmounted, then copies the deduped list to your clipboard (plain
+`https://www.source-of-media.com/...` URLs, one per line). It stops once the
+count is stable for 5 steps, or after 500 steps as a hard cap.
+
+**2. Save the clipboard to a file and merge it into `urls.txt`:**
+
+```bash
+pbpaste > collection.txt        # macOS; or paste into a file manually
+pnpm run collection collection.txt
+```
+
+```
+Usage: media-hero-cli-collection <collection.html> [options]
+
+  --out DIR        output/manifest directory (default: ./downloads)
+  --urls-file FILE target urls.txt file (default: ./urls.txt)
+  --help
+```
+
+`pnpm run collection` also accepts raw page HTML directly (e.g. from
+View Source or "Copy as HTML") — it extracts `/p/<code>/` and
+`/reel(s)/<code>/` links either way. New links are added to
+`urls.txt`; anything already `completed` in `manifest.json` (verified
+against disk) is left out, and any _existing_ `urls.txt` line that
+turns out to already be downloaded is pruned too — so completed posts
+never linger in the file and spam `skipped (already downloaded)` on
+the next `pnpm start`. Comments and blank lines are left alone. Safe
+to re-run after harvesting more of the collection.
+
+**3. Download as usual:**
+
+```bash
+pnpm start
+```
+
 ## Limitations
 
 - **No interactive login.** Session reuse is file-based only
@@ -161,8 +211,8 @@ Exit code is `0` only if every URL ended `completed`, `skipped`, or
 - Only direct post/reel URLs: no stories, highlights, or profile
   scraping.
 - No parallel downloads.
-- Instagram only (the extractor registry keeps the door open for other
-  sites).
+- Single source only (the extractor registry keeps the door open for
+  others).
 
 ## Troubleshooting
 
@@ -172,14 +222,14 @@ Exit code is `0` only if every URL ended `completed`, `skipped`, or
 - **`browserType.launch: Executable doesn't exist`** — the Playwright
   browser was never downloaded. Run `npx playwright install firefox`.
   Needed for both the Playwright and imginn fallbacks.
-- **Everything ends `requires-login`** — Instagram walls most anonymous
-  requests, and the imginn mirror also failed (or its Cloudflare
-  challenge did not clear). Retry, or pass `--cookies` with a logged-in
-  session.
+- **Everything ends `requires-login`** — the source site walls most
+  anonymous requests, and the imginn mirror also failed (or its
+  Cloudflare challenge did not clear). Retry, or pass `--cookies` with a
+  logged-in session.
 - **Images look low-resolution (~720px)** — that is the imginn mirror
   serving a downscaled variant for some posts. The only way to
   guarantee full-resolution originals is `--cookies`, which pulls
-  directly from Instagram.
+  directly from the source.
 
 ## Development
 
@@ -198,11 +248,12 @@ See [CLAUDE.md](CLAUDE.md) for architecture and testing details.
 
 This is a personal archiving tool. Only download content you have the
 right to save, credit creators, and don't redistribute others' media.
-Downloading is subject to Instagram's Terms of Service and to copyright
-law — you are responsible for how you use it. The imginn.com fallback is
-an independent third-party mirror with no affiliation to this project or
-to Instagram; you rely on it at your own risk. Keep the built-in
-rate-limiting delay in place to avoid hammering either service.
+Downloading is subject to the source site's Terms of Service and to
+copyright law — you are responsible for how you use it. The imginn.com
+fallback is an independent third-party mirror with no affiliation to
+this project or to the source site; you rely on it at your own risk.
+Keep the built-in rate-limiting delay in place to avoid hammering
+either service.
 
 ## License
 

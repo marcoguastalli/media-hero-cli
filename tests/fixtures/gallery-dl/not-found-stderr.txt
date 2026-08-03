@@ -1,1 +1,1 @@
-[instagram][error] HttpError: '404 Not Found' for 'https://www.instagram.com/p/GONE/'
+[source-of-media][error] HttpError: '404 Not Found' for 'https://www.source-of-media.com/p/GONE/'

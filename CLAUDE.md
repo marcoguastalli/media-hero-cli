@@ -5,14 +5,14 @@ with code in this repository.
 
 ## What this is
 
-A Node.js CLI that batch-downloads Instagram post/reel media from a
+A Node.js CLI that batch-downloads post/reel media from a
 text file of URLs. It is a terminal port of the `media-hero-catch`
 Firefox extension (sibling repo) — same media coverage (posts, carousels
 capped at 10 items, reels), ported patterns rather than shared code
 (carousel filenames use a zero-padded 3-digit suffix, diverging from
 the extension's un-padded numbering). Anonymous by default; `--cookies
 <file>` (Netscape cookies.txt) passes a logged-in session through to
-both Instagram extractors for full-resolution login-walled posts — the
+both extractors for full-resolution login-walled posts — the
 file goes to gallery-dl verbatim and is parsed (src/extractors/cookies.js)
 into the Playwright context. Cookie files are credentials: gitignored,
 never logged. Without cookies, an imginn.com mirror extractor is the
@@ -60,10 +60,10 @@ src/extractors/playwright-extractor.js  fallback: headless Firefox,
                                         runs dom-detect via page.evaluate
 src/extractors/imginn.js        last resort: loads imginn.com/p/<code>/
                                 (Cloudflare-walled mirror) in headless
-                                Firefox; reconstructs cdninstagram URLs
+                                Firefox; reconstructs CDN URLs
                                 the queue can fetch (~720px, no login)
 src/extractors/dom-detect.js    browser-context detection functions
-                                (detectInstagramMedia, detectImginnMedia)
+                                (detectSourceMedia, detectImginnMedia)
 src/extractors/cookies.js       Netscape cookies.txt → addCookies() objects
 src/extractors/errors.js        ExtractorError + ERROR_CODES
 src/download/filenames.js       carousel numbering (_001.._NNN, padded);

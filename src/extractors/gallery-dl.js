@@ -27,7 +27,7 @@ export function createGalleryDlExtractor({
         '-D',
         destDir,
         '--range',
-        `1-${CONFIG.instagram.maxCarouselItems}`,
+        `1-${CONFIG.source.maxCarouselItems}`,
       ];
       if (cookiesFile) {
         args.push('--cookies', cookiesFile);
@@ -38,26 +38,31 @@ export function createGalleryDlExtractor({
       if (error) {
         throw toSpawnError(binary, error);
       }
+
+      // gallery-dl can exit non-zero after already saving media (e.g. a
+      // later, unrelated step like fetching comments hits a login wall).
+      // Files on disk are the real signal of success; a non-zero exit
+      // only means failure when nothing was actually downloaded.
+      const files = parseDownloadedFiles(stdout);
+      if (files.length > 0) {
+        return {
+          media: files.map(file => ({
+            url,
+            type: mediaTypeFromFilename(file),
+            filename: file,
+          })),
+          directDownload: files,
+        };
+      }
+
       if (code !== 0) {
         throw toExitError(url, code, `${stderr}\n${stdout}`);
       }
 
-      const files = parseDownloadedFiles(stdout);
-      if (files.length === 0) {
-        throw new ExtractorError(
-          ERROR_CODES.EXTRACTION_FAILED,
-          `gallery-dl reported no downloaded files for ${url}`
-        );
-      }
-
-      return {
-        media: files.map(file => ({
-          url,
-          type: mediaTypeFromFilename(file),
-          filename: file,
-        })),
-        directDownload: files,
-      };
+      throw new ExtractorError(
+        ERROR_CODES.EXTRACTION_FAILED,
+        `gallery-dl reported no downloaded files for ${url}`
+      );
     },
   };
 }

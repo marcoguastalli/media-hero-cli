@@ -48,7 +48,7 @@ describe('gallery-dl extractor', () => {
     });
 
     const result = await extractor.extract(
-      'https://www.instagram.com/p/C7xKp2AbCdE/',
+      'https://www.source-of-media.com/p/C7xKp2AbCdE/',
       { destDir: './downloads/C7xKp2AbCdE' }
     );
 
@@ -178,6 +178,22 @@ describe('gallery-dl extractor', () => {
     await expect(
       extractor.extract('https://url', { destDir: '/tmp' })
     ).rejects.toMatchObject({ code: ERROR_CODES.TOOL_MISSING });
+  });
+
+  it('treats files on disk as success even when the exit code is non-zero', async () => {
+    const extractor = createGalleryDlExtractor({
+      spawnFn: makeSpawnFn({
+        stdout: 'DbBFKFnkTTE/DbBFKFnkTTE_001.jpg\n',
+        stderr: fixture('login-stderr.txt'),
+        code: 1,
+      }),
+    });
+
+    const result = await extractor.extract('https://url', {
+      destDir: '/tmp/out/DbBFKFnkTTE',
+    });
+
+    expect(result.directDownload).toEqual(['DbBFKFnkTTE/DbBFKFnkTTE_001.jpg']);
   });
 
   it('fails when gallery-dl exits cleanly but reports no files', async () => {

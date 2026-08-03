@@ -1,13 +1,16 @@
 /**
- * Input file parsing and Instagram URL classification.
+ * Input file parsing and URL classification. Host-agnostic: any
+ * http(s) URL matching one of the path shapes below is accepted,
+ * regardless of domain.
  *
  * Supported URL shapes:
- * - https://www.instagram.com/p/<shortcode>/          (post)
- * - https://www.instagram.com/<user>/p/<shortcode>/   (post)
- * - https://www.instagram.com/reel/<shortcode>/       (reel)
- * - https://www.instagram.com/reels/<shortcode>/      (reel)
+ * - https://<host>/p/<shortcode>/          (post)
+ * - https://<host>/<user>/p/<shortcode>/   (post)
+ * - https://<host>/reel/<shortcode>/       (reel)
+ * - https://<host>/reels/<shortcode>/      (reel)
  *
- * Everything else (profiles, stories, other hosts) is classified invalid.
+ * Everything else (profiles, stories, non-matching paths) is classified
+ * invalid.
  */
 
 export const URL_TYPES = {
@@ -34,12 +37,9 @@ export function classifyUrl(rawUrl) {
     return invalid(rawUrl);
   }
 
-  const hostname = parsed.hostname.toLowerCase();
-  const isInstagram =
-    hostname === 'instagram.com' || hostname.endsWith('.instagram.com');
   const isHttp = parsed.protocol === 'http:' || parsed.protocol === 'https:';
 
-  if (!isInstagram || !isHttp) {
+  if (!isHttp) {
     return invalid(rawUrl);
   }
 

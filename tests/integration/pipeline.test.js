@@ -5,7 +5,14 @@
  */
 
 import { existsSync } from 'node:fs';
-import { copyFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import {
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -129,7 +136,7 @@ describe('pipeline', () => {
     expect(manifest.entries.LOGIN0001.status).toBe('requires-login');
     expect(manifest.entries.FAILURE01.status).toBe('failed');
     expect(
-      manifest.entries['https://www.instagram.com/heroaccount/'].status
+      manifest.entries['https://www.source-of-media.com/heroaccount/'].status
     ).toBe('invalid-url');
     expect(manifest.entries.DIRECT001).toMatchObject({
       status: 'completed',
@@ -165,8 +172,8 @@ describe('pipeline', () => {
       'skipped',
     ]);
     expect(deps.chain.calls).toEqual([
-      'https://www.instagram.com/reel/LOGIN0001/',
-      'https://www.instagram.com/p/FAILURE01/',
+      'https://www.source-of-media.com/reel/LOGIN0001/',
+      'https://www.source-of-media.com/p/FAILURE01/',
     ]);
   });
 
@@ -199,16 +206,38 @@ describe('pipeline', () => {
     // SUCCESS01 files are gone → re-downloaded, not skipped.
     expect(byKey.SUCCESS01).toBe('completed');
     expect(deps.chain.calls).toContain(
-      'https://www.instagram.com/p/SUCCESS01/'
+      'https://www.source-of-media.com/p/SUCCESS01/'
     );
     // DIRECT001 still on disk → still skipped.
     expect(byKey.DIRECT001).toBe('skipped');
     expect(deps.chain.calls).not.toContain(
-      'https://www.instagram.com/p/DIRECT001/'
+      'https://www.source-of-media.com/p/DIRECT001/'
     );
     expect(
       existsSync(path.join(outDir, 'SUCCESS01', 'SUCCESS01_001.jpg'))
     ).toBe(true);
+  });
+
+  it('skips a URL whose destination folder already has files the manifest never recorded', async () => {
+    const { outDir, urlsFile } = await setup();
+
+    // Simulate an orphaned folder left behind by a prior extractor
+    // attempt (e.g. gallery-dl partially downloading before falling
+    // through to another extractor) with no manifest entry at all.
+    await mkdir(path.join(outDir, 'SUCCESS01'), { recursive: true });
+    await writeFile(
+      path.join(outDir, 'SUCCESS01', 'SUCCESS01_001.jpg'),
+      'orphaned'
+    );
+
+    const deps = makeDeps();
+    const { results } = await runApp({ urlsFile, outDir, delayMs: 0 }, deps);
+
+    const byKey = Object.fromEntries(results.map(r => [r.key, r.status]));
+    expect(byKey.SUCCESS01).toBe('skipped');
+    expect(deps.chain.calls).not.toContain(
+      'https://www.source-of-media.com/p/SUCCESS01/'
+    );
   });
 
   it('dry-run touches neither network nor disk', async () => {
@@ -236,7 +265,7 @@ describe('pipeline', () => {
 
   it('exits 0 when every URL succeeds, using the default delay', async () => {
     const { outDir, urlsFile } = await setup();
-    await writeFile(urlsFile, 'https://www.instagram.com/p/SUCCESS01/\n');
+    await writeFile(urlsFile, 'https://www.source-of-media.com/p/SUCCESS01/\n');
     const deps = makeDeps();
 
     const { exitCode, results } = await runApp({ urlsFile, outDir }, deps);
@@ -251,8 +280,8 @@ describe('pipeline', () => {
     await writeFile(
       urlsFile,
       [
-        'https://www.instagram.com/p/SUCCESS01/',
-        'https://www.instagram.com/p/DIRECT001/',
+        'https://www.source-of-media.com/p/SUCCESS01/',
+        'https://www.source-of-media.com/p/DIRECT001/',
         '',
       ].join('\n')
     );
@@ -265,7 +294,7 @@ describe('pipeline', () => {
 
   it('reports the message of stackless errors in verbose mode', async () => {
     const { outDir, urlsFile } = await setup();
-    await writeFile(urlsFile, 'https://www.instagram.com/p/FAILURE01/\n');
+    await writeFile(urlsFile, 'https://www.source-of-media.com/p/FAILURE01/\n');
     const deps = makeDeps();
     deps.reporter = new Reporter({
       out: { write: chunk => deps.lines.push(chunk) },
@@ -289,7 +318,7 @@ describe('pipeline', () => {
 
   it('threads the cookies file through to the extractor chain', async () => {
     const { outDir, urlsFile } = await setup();
-    await writeFile(urlsFile, 'https://www.instagram.com/p/SUCCESS01/\n');
+    await writeFile(urlsFile, 'https://www.source-of-media.com/p/SUCCESS01/\n');
     const cookiesFile = path.join(path.dirname(urlsFile), 'cookies.txt');
     await writeFile(cookiesFile, '# Netscape HTTP Cookie File\n');
     const deps = makeDeps();
@@ -354,8 +383,8 @@ describe('pipeline', () => {
     const failsContent = await readFile(failsFile, 'utf8');
     expect(failsContent).toBe(
       `${[
-        'https://www.instagram.com/reel/LOGIN0001/',
-        'https://www.instagram.com/p/FAILURE01/',
+        'https://www.source-of-media.com/reel/LOGIN0001/',
+        'https://www.source-of-media.com/p/FAILURE01/',
       ].join('\n')}\n`
     );
 
@@ -374,8 +403,8 @@ describe('pipeline', () => {
     await writeFile(
       urlsFile,
       `${[
-        'https://www.instagram.com/p/FAILURE01/',
-        'https://www.instagram.com/p/FAILURE01/',
+        'https://www.source-of-media.com/p/FAILURE01/',
+        'https://www.source-of-media.com/p/FAILURE01/',
       ].join('\n')}\n`
     );
     const failsFile = path.join(path.dirname(urlsFile), 'urls_fails.txt');
@@ -383,6 +412,6 @@ describe('pipeline', () => {
     await runApp({ urlsFile, outDir, delayMs: 0 }, makeDeps());
 
     const failsContent = await readFile(failsFile, 'utf8');
-    expect(failsContent).toBe('https://www.instagram.com/p/FAILURE01/\n');
+    expect(failsContent).toBe('https://www.source-of-media.com/p/FAILURE01/\n');
   });
 });

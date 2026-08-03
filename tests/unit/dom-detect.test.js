@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   detectImginnMedia,
-  detectInstagramMedia,
+  detectSourceMedia,
   hasLoginForm,
 } from '../../src/extractors/dom-detect.js';
 
@@ -19,10 +19,10 @@ const loadFixture = name => {
   document.body.innerHTML = readFileSync(path.join(fixturesDir, name), 'utf8');
 };
 
-describe('detectInstagramMedia', () => {
+describe('detectSourceMedia', () => {
   it('picks the highest-resolution srcset candidate and skips profile pictures', () => {
     loadFixture('single-image.html');
-    const media = detectInstagramMedia(10);
+    const media = detectSourceMedia(10);
 
     expect(media).toEqual([
       { url: 'https://cdn.example.com/photo_1440.jpg', type: 'image' },
@@ -31,7 +31,7 @@ describe('detectInstagramMedia', () => {
 
   it('detects carousel items, deduplicates, and prioritizes videos', () => {
     loadFixture('carousel.html');
-    const media = detectInstagramMedia(10);
+    const media = detectSourceMedia(10);
 
     expect(media).toEqual([
       { url: 'https://cdn.example.com/slide2.mp4', type: 'video' },
@@ -42,12 +42,12 @@ describe('detectInstagramMedia', () => {
 
   it('caps results at maxItems', () => {
     loadFixture('carousel.html');
-    expect(detectInstagramMedia(2)).toHaveLength(2);
+    expect(detectSourceMedia(2)).toHaveLength(2);
   });
 
   it('detects a reel video via its <source> child outside an article', () => {
     loadFixture('reel.html');
-    const media = detectInstagramMedia(10);
+    const media = detectSourceMedia(10);
 
     expect(media).toEqual([
       { url: 'https://cdn.example.com/reel_720.mp4', type: 'video' },
@@ -56,7 +56,7 @@ describe('detectInstagramMedia', () => {
 
   it('finds nothing on a login wall', () => {
     loadFixture('login-wall.html');
-    expect(detectInstagramMedia(10)).toEqual([]);
+    expect(detectSourceMedia(10)).toEqual([]);
   });
 
   it('filters small UI images and falls back from srcset to src', () => {
@@ -77,7 +77,7 @@ describe('detectInstagramMedia', () => {
       width: 480,
     });
 
-    expect(detectInstagramMedia(10)).toEqual([
+    expect(detectSourceMedia(10)).toEqual([
       { url: 'https://cdn.example.com/fallback.jpg', type: 'image' },
       { url: 'https://cdn.example.com/nosize.jpg', type: 'image' },
       { url: 'https://cdn.example.com/large_1080.jpg', type: 'image' },
@@ -93,8 +93,8 @@ describe('detectImginnMedia', () => {
   const direct = (file, host) =>
     `https://${host}/v/t51/${file}?stp=x&_nc_ht=${host}&oh=1`;
 
-  it('reconstructs direct cdninstagram URLs, using data-src for lazy slides', () => {
-    const host = 'scontent-atl3-2.cdninstagram.com';
+  it('reconstructs direct CDN URLs, using data-src for lazy slides', () => {
+    const host = 'scontent-atl3-2.cdn.source-of-media.com';
     document.body.innerHTML = `
       <div class="show">
         <div class="media-wrap"><img src="${proxy('a_n.jpg', host)}" /></div>
@@ -115,7 +115,7 @@ describe('detectImginnMedia', () => {
   });
 
   it('prefers a video inside a media-wrap and caps at maxItems', () => {
-    const host = 'scontent.cdninstagram.com';
+    const host = 'scontent.cdn.source-of-media.com';
     document.body.innerHTML = `
       <div class="media-wrap">
         <video><source src="${proxy('clip_n.mp4', host)}" /></video>
@@ -129,7 +129,7 @@ describe('detectImginnMedia', () => {
   });
 
   it('passes through already-direct URLs and skips unreconstructable ones', () => {
-    const host = 'scontent.cdninstagram.com';
+    const host = 'scontent.cdn.source-of-media.com';
     document.body.innerHTML = `
       <div class="media-wrap"><img src="https://${host}/v/direct.jpg" /></div>
       <div class="media-wrap"><img src="https://s6.imginn.com/broken.jpg" /></div>`;

@@ -1,14 +1,14 @@
 /**
- * Last-resort extractor: imginn.com, a public Instagram mirror keyed
- * by the same shortcode (https://imginn.com/p/<shortcode>/). It shows
- * login-walled posts anonymously, which is why the chain may reach it
- * after a requires-login from the Instagram extractors.
+ * Last-resort extractor: imginn.com, a public mirror of the source
+ * site keyed by the same shortcode (https://imginn.com/p/<shortcode>/).
+ * It shows login-walled posts anonymously, which is why the chain may
+ * reach it after a requires-login from the earlier extractors.
  *
  * The site sits behind a Cloudflare JS challenge, so it must be loaded
  * in a real headless browser; the challenge resolves itself after a
- * few seconds. Media URLs are reconstructed to the original
- * cdninstagram form (see detectImginnMedia), which the download queue
- * can fetch without a browser.
+ * few seconds. Media URLs are reconstructed to their original CDN
+ * form (see detectImginnMedia), which the download queue can fetch
+ * without a browser.
  */
 
 import { CONFIG } from '../config.js';
@@ -42,13 +42,13 @@ async function extractFromPage(browser, shortcode, sourceUrl) {
 
   await page.goto(`${CONFIG.imginn.baseUrl}/p/${shortcode}/`, {
     waitUntil: 'domcontentloaded',
-    timeout: CONFIG.instagram.pageTimeoutMs,
+    timeout: CONFIG.source.pageTimeoutMs,
   });
   await passCloudflareChallenge(page);
 
   const media = await page.evaluate(
     detectImginnMedia,
-    CONFIG.instagram.maxCarouselItems
+    CONFIG.source.maxCarouselItems
   );
 
   if (media.length === 0) {

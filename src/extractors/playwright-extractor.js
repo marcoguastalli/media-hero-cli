@@ -9,7 +9,7 @@
 import { readFile } from 'node:fs/promises';
 import { CONFIG } from '../config.js';
 import { parseNetscapeCookies } from './cookies.js';
-import { detectInstagramMedia, hasLoginForm } from './dom-detect.js';
+import { detectSourceMedia, hasLoginForm } from './dom-detect.js';
 import { ERROR_CODES, ExtractorError } from './errors.js';
 
 const defaultLaunch = async () => {
@@ -43,7 +43,7 @@ async function extractFromPage(browser, url, cookies) {
   if (cookies.length > 0) {
     await page.context().addCookies(cookies);
   }
-  const timeout = CONFIG.instagram.pageTimeoutMs;
+  const timeout = CONFIG.source.pageTimeoutMs;
 
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout });
 
@@ -57,8 +57,8 @@ async function extractFromPage(browser, url, cookies) {
   await waitForPostContent(page, url, timeout);
 
   const media = await page.evaluate(
-    detectInstagramMedia,
-    CONFIG.instagram.maxCarouselItems
+    detectSourceMedia,
+    CONFIG.source.maxCarouselItems
   );
 
   if (media.length === 0) {

@@ -1,11 +1,11 @@
 import {
-  detectInstagramMedia,
+  detectSourceMedia,
   hasLoginForm,
 } from '../../src/extractors/dom-detect.js';
 import { ERROR_CODES } from '../../src/extractors/errors.js';
 import { createPlaywrightExtractor } from '../../src/extractors/playwright-extractor.js';
 
-const POST_URL = 'https://www.instagram.com/p/ABC123/';
+const POST_URL = 'https://www.source-of-media.com/p/ABC123/';
 
 /**
  * Build a fake browser whose page behavior is scripted per test.
@@ -40,7 +40,7 @@ const makeFakeBrowser = ({
       }
     },
     evaluate: async fn => {
-      if (fn === detectInstagramMedia) {
+      if (fn === detectSourceMedia) {
         return media;
       }
       if (fn === hasLoginForm) {
@@ -83,7 +83,7 @@ describe('playwright extractor', () => {
   it('throws requires-login on redirect to the login page', async () => {
     const fake = makeFakeBrowser({
       finalUrl:
-        'https://www.instagram.com/accounts/login/?next=%2Fp%2FABC123%2F',
+        'https://www.source-of-media.com/accounts/login/?next=%2Fp%2FABC123%2F',
     });
 
     await expect(makeExtractor(fake).extract(POST_URL)).rejects.toMatchObject({
@@ -156,7 +156,7 @@ describe('playwright extractor', () => {
       launchFn: async () => fake.browser,
       readFileFn: async (file, encoding) => {
         readCalls.push({ file, encoding });
-        return '.instagram.com\tTRUE\t/\tTRUE\t1790000000\tsessionid\ts3cret';
+        return '.source-of-media.com\tTRUE\t/\tTRUE\t1790000000\tsessionid\ts3cret';
       },
     });
 

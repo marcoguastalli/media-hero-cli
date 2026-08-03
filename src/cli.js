@@ -18,14 +18,14 @@ import { Reporter } from './report/reporter.js';
 
 const HELP = `Usage: media-hero-cli [urls.txt] [options]
 
-Download Instagram post/reel media listed in a text file (one URL per
+Download post/reel media listed in a text file (one URL per
 line; blank lines and lines starting with # are ignored). The input file
 defaults to ${CONFIG.input.defaultFile} when omitted.
 
 Options:
   --out DIR       Output directory (default: ${CONFIG.output.defaultDir})
   --delay MS      Delay between URLs in ms (default: ${CONFIG.batch.defaultDelayMs})
-  --cookies FILE  Netscape cookies.txt with a logged-in Instagram
+  --cookies FILE  Netscape cookies.txt with a logged-in source-site
                   session (for posts behind the login wall)
   --force         Re-download URLs already marked completed
   --dry-run       Only parse and classify; no network access, no writes
@@ -34,7 +34,7 @@ Options:
   --version       Show version
 
 Without --cookies only public content is reachable: posts behind
-Instagram's login wall are reported with a distinct "requires-login"
+the source site's login wall are reported with a distinct "requires-login"
 status. Install gallery-dl for the primary extractor (pip install
 gallery-dl); without it the Playwright fallback is used
 (npx playwright install firefox).`;

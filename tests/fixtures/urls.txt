@@ -1,7 +1,7 @@
 # sample input file for integration tests
-https://www.instagram.com/p/SUCCESS01/
+https://www.source-of-media.com/p/SUCCESS01/
 
-https://www.instagram.com/reel/LOGIN0001/
-https://www.instagram.com/p/FAILURE01/
-https://www.instagram.com/heroaccount/
-https://www.instagram.com/p/DIRECT001/
+https://www.source-of-media.com/reel/LOGIN0001/
+https://www.source-of-media.com/p/FAILURE01/
+https://www.source-of-media.com/heroaccount/
+https://www.source-of-media.com/p/DIRECT001/
