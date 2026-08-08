@@ -13,7 +13,7 @@ export const CONFIG = {
     fileTimeoutMs: 60000,
   },
   source: {
-    maxCarouselItems: 10,
+    maxCarouselItems: Infinity,
     pageTimeoutMs: 10000,
   },
   imginn: {

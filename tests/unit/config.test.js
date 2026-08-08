@@ -6,7 +6,7 @@ describe('config', () => {
     expect(CONFIG.downloads.retryDelays).toHaveLength(
       CONFIG.downloads.retryAttempts
     );
-    expect(CONFIG.source.maxCarouselItems).toBe(10);
+    expect(CONFIG.source.maxCarouselItems).toBe(Infinity);
     expect(CONFIG.output.manifestName).toBe('manifest.json');
   });
 

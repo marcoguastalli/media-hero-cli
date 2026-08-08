@@ -60,7 +60,7 @@ describe('gallery-dl extractor', () => {
     expect(result.media.map(m => m.type)).toEqual(['image', 'video', 'image']);
   });
 
-  it('passes destination directory and carousel range to gallery-dl', async () => {
+  it('passes destination directory to gallery-dl (no range limit)', async () => {
     const calls = [];
     const extractor = createGalleryDlExtractor({
       spawnFn: makeSpawnFn({ stdout: 'x/a.jpg\n' }, calls),
@@ -68,13 +68,7 @@ describe('gallery-dl extractor', () => {
     await extractor.extract('https://url', { destDir: '/tmp/out/ABC' });
 
     expect(calls[0].binary).toBe('gallery-dl');
-    expect(calls[0].args).toEqual([
-      '-D',
-      '/tmp/out/ABC',
-      '--range',
-      '1-10',
-      'https://url',
-    ]);
+    expect(calls[0].args).toEqual(['-D', '/tmp/out/ABC', 'https://url']);
   });
 
   it('passes the cookies file to gallery-dl when provided', async () => {
@@ -90,8 +84,6 @@ describe('gallery-dl extractor', () => {
     expect(calls[0].args).toEqual([
       '-D',
       '/tmp/out/ABC',
-      '--range',
-      '1-10',
       '--cookies',
       '/tmp/cookies.txt',
       'https://url',
