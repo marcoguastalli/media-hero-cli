@@ -34,21 +34,16 @@ const FAIL_TRACKED_STATUSES = new Set(['failed', 'requires-login']);
 
 /**
  * Run the full pipeline.
- * @param {Object} options - { urlsFile, outDir, delayMs?, force?, dryRun?, cookiesFile? }
+ * @param {Object} options - { urlsFile, outDir, delayMs?, force?, dryRun?,
+ *   cookiesFile?, cookiesFromBrowser? }
  * @param {Object} deps - { chain, queue, reporter, sleepFn? }
  * @returns {Promise<{exitCode: number, results: Array}>}
  */
 export async function runApp(options, deps) {
   const { urlsFile, outDir, force = false, dryRun = false } = options;
-  const cookiesFile = options.cookiesFile ?? null;
+  const { cookiesFile, cookiesFromBrowser } = await resolveCookies(options);
   const { chain, queue, reporter, sleepFn = sleep } = deps;
   const delayMs = validateDelay(options.delayMs ?? CONFIG.batch.defaultDelayMs);
-
-  if (cookiesFile) {
-    await access(cookiesFile).catch(() => {
-      throw new Error(`Cookies file not found: ${cookiesFile}`);
-    });
-  }
 
   const entries = parseUrlsFile(await readFile(urlsFile, 'utf8'));
   const manifest = await new Manifest(outDir).load();
@@ -67,6 +62,7 @@ export async function runApp(options, deps) {
       force,
       dryRun,
       cookiesFile,
+      cookiesFromBrowser,
     };
     const result = await processEntry(ctx, reporter);
     if (FAIL_TRACKED_STATUSES.has(result.status)) {
@@ -90,6 +86,22 @@ export async function runApp(options, deps) {
   reporter.summary(results, Date.now() - startedAt);
   const exitCode = results.every(r => OK_STATUSES.has(r.status)) ? 0 : 1;
   return { exitCode, results };
+}
+
+/**
+ * Normalize the session options, failing fast on a missing cookies file.
+ * @returns {Promise<{cookiesFile: string|null, cookiesFromBrowser: string|null}>}
+ */
+async function resolveCookies(options) {
+  const cookiesFile = options.cookiesFile ?? null;
+  const cookiesFromBrowser = options.cookiesFromBrowser ?? null;
+
+  if (cookiesFile) {
+    await access(cookiesFile).catch(() => {
+      throw new Error(`Cookies file not found: ${cookiesFile}`);
+    });
+  }
+  return { cookiesFile, cookiesFromBrowser };
 }
 
 async function processEntry(ctx, reporter) {
@@ -142,7 +154,8 @@ async function processEntry(ctx, reporter) {
 }
 
 async function extractAndDownload(ctx, key) {
-  const { entry, chain, queue, outDir, cookiesFile } = ctx;
+  const { entry, chain, queue, outDir } = ctx;
+  const { cookiesFile, cookiesFromBrowser } = ctx;
   const destDir = path.join(outDir, key);
   await mkdir(destDir, { recursive: true });
 
@@ -150,6 +163,7 @@ async function extractAndDownload(ctx, key) {
     destDir,
     shortcode: key,
     cookiesFile,
+    cookiesFromBrowser,
   });
 
   if (result.directDownload?.length) {

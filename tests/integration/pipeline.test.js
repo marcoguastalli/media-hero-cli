@@ -343,6 +343,31 @@ describe('pipeline', () => {
     });
   });
 
+  it('threads the cookies browser through to the extractor chain', async () => {
+    const { outDir, urlsFile } = await setup();
+    await writeFile(urlsFile, 'https://www.source-of-media.com/p/SUCCESS01/\n');
+    const deps = makeDeps();
+    const seenOptions = [];
+    const inner = deps.chain;
+    deps.chain = {
+      extract(url, options) {
+        seenOptions.push(options);
+        return inner.extract(url, options);
+      },
+    };
+
+    const { exitCode } = await runApp(
+      { urlsFile, outDir, delayMs: 0, cookiesFromBrowser: 'chromium' },
+      deps
+    );
+
+    expect(exitCode).toBe(0);
+    expect(seenOptions[0]).toMatchObject({
+      cookiesFromBrowser: 'chromium',
+      cookiesFile: null,
+    });
+  });
+
   it('rejects a missing cookies file before processing any URL', async () => {
     const { outDir, urlsFile } = await setup();
     const deps = makeDeps();

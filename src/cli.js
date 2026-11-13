@@ -27,15 +27,19 @@ Options:
   --delay MS      Delay between URLs in ms (default: ${CONFIG.batch.defaultDelayMs})
   --cookies FILE  Netscape cookies.txt with a logged-in source-site
                   session (for posts behind the login wall)
+  --cookies-from-browser BROWSER
+                  Read the logged-in session straight from a browser's
+                  cookie store (chromium, chrome, firefox, brave, edge,
+                  …; gallery-dl only, syntax BROWSER[:PROFILE])
   --force         Re-download URLs already marked completed
   --dry-run       Only parse and classify; no network access, no writes
   --verbose       Per-step logging (extractor attempts, retries)
   --help          Show this help
   --version       Show version
 
-Without --cookies only public content is reachable: posts behind
-the source site's login wall are reported with a distinct "requires-login"
-status. Install gallery-dl for the primary extractor (pip install
+Without --cookies/--cookies-from-browser only public content is
+reachable: posts behind the source site's login wall are reported with
+a distinct "requires-login" status. Install gallery-dl for the primary extractor (pip install
 gallery-dl); without it the Playwright fallback is used
 (npx playwright install firefox).`;
 
@@ -45,6 +49,7 @@ const parseCliArgs = () =>
       out: { type: 'string', default: CONFIG.output.defaultDir },
       delay: { type: 'string' },
       cookies: { type: 'string' },
+      'cookies-from-browser': { type: 'string' },
       force: { type: 'boolean', default: false },
       'dry-run': { type: 'boolean', default: false },
       verbose: { type: 'boolean', default: false },
@@ -91,6 +96,7 @@ const main = async () => {
       force: values.force,
       dryRun: values['dry-run'],
       cookiesFile: values.cookies,
+      cookiesFromBrowser: values['cookies-from-browser'],
     },
     { chain, queue: new DownloadQueue(), reporter }
   );

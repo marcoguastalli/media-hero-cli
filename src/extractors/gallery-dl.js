@@ -22,13 +22,16 @@ export function createGalleryDlExtractor({
   return {
     name: 'gallery-dl',
 
-    async extract(url, { destDir, cookiesFile }) {
+    async extract(url, { destDir, cookiesFile, cookiesFromBrowser }) {
       const args = ['-D', destDir];
       if (CONFIG.source.maxCarouselItems !== Infinity) {
         args.push('--range', `1-${CONFIG.source.maxCarouselItems}`);
       }
       if (cookiesFile) {
         args.push('--cookies', cookiesFile);
+      }
+      if (cookiesFromBrowser) {
+        args.push('--cookies-from-browser', cookiesFromBrowser);
       }
       args.push(url);
       const { code, stdout, stderr, error } = await run(spawnFn, binary, args);

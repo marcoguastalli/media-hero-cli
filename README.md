@@ -73,6 +73,9 @@ pnpm start [urls.txt] [options]
   --out DIR       output directory (default: ./downloads)
   --delay MS      delay between URLs in ms (default: 3000, clamped 0–30000)
   --cookies FILE  Netscape cookies.txt with a logged-in session
+  --cookies-from-browser BROWSER
+                  read the session from a browser's cookie store
+                  (chromium, chrome, firefox, brave, edge, …)
   --force         re-download URLs already marked completed
   --dry-run       parse, classify, and report; no network, no writes
   --verbose       per-step logging (extractor attempts, retries)
@@ -120,6 +123,19 @@ Ways to produce the file: a "cookies.txt" browser extension, or
 exporters. Only the `sessionid`/`csrftoken` cookies matter.
 The file is passed to gallery-dl as-is (`--cookies`) and parsed into
 the Playwright browser context for the fallback.
+
+Alternatively, skip the export and let gallery-dl read the session
+directly from a browser you are logged in with:
+
+```bash
+pnpm start urls.txt --cookies-from-browser chromium
+```
+
+The value is passed to gallery-dl verbatim (`BROWSER[:PROFILE]`, e.g.
+`chromium:Profile 1`). On macOS the first run triggers a Keychain
+prompt ("Chromium Safe Storage") so the cookie store can be decrypted.
+This applies to the gallery-dl extractor only — the Playwright and
+imginn fallbacks stay anonymous unless `--cookies` is also given.
 
 **Treat the file as a credential** — anyone holding it has your
 logged-in session. Keep it out of git and delete it when done.
@@ -205,9 +221,10 @@ pnpm start
 
 ## Limitations
 
-- **No interactive login.** Session reuse is file-based only
-  (`--cookies`); the tool never logs in or refreshes cookies itself,
-  so an expired session simply degrades to `requires-login`.
+- **No interactive login.** Session reuse is cookie-based only
+  (`--cookies` / `--cookies-from-browser`); the tool never logs in or
+  refreshes cookies itself, so an expired session simply degrades to
+  `requires-login`.
 - Only direct post/reel URLs: no stories, highlights, or profile
   scraping.
 - No parallel downloads.
