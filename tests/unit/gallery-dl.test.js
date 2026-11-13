@@ -90,6 +90,25 @@ describe('gallery-dl extractor', () => {
     ]);
   });
 
+  it('passes the browser name to gallery-dl when provided', async () => {
+    const calls = [];
+    const extractor = createGalleryDlExtractor({
+      spawnFn: makeSpawnFn({ stdout: 'x/a.jpg\n' }, calls),
+    });
+    await extractor.extract('https://url', {
+      destDir: '/tmp/out/ABC',
+      cookiesFromBrowser: 'chromium',
+    });
+
+    expect(calls[0].args).toEqual([
+      '-D',
+      '/tmp/out/ABC',
+      '--cookies-from-browser',
+      'chromium',
+      'https://url',
+    ]);
+  });
+
   it('maps a missing binary to tool-missing with an install hint', async () => {
     const enoent = Object.assign(new Error('spawn gallery-dl ENOENT'), {
       code: 'ENOENT',

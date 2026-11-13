@@ -15,9 +15,11 @@ the extension's un-padded numbering). Anonymous by default; `--cookies
 both extractors for full-resolution login-walled posts — the
 file goes to gallery-dl verbatim and is parsed (src/extractors/cookies.js)
 into the Playwright context. Cookie files are credentials: gitignored,
-never logged. Without cookies, an imginn.com mirror extractor is the
-last resort and still retrieves most public posts anonymously (at
-reduced resolution).
+never logged. `--cookies-from-browser <browser>` instead hands the
+browser name to gallery-dl only (it reads the browser's cookie store
+itself; the fallbacks stay anonymous). Without cookies, an imginn.com
+mirror extractor is the last resort and still retrieves most public
+posts anonymously (at reduced resolution).
 
 ## Commands
 
